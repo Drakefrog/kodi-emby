@@ -8,5 +8,5 @@
       <hashes>sha256</hashes>
     </dir>
   </extension>
-  <extension point="xbmc.addon.metadata"><summary lang="en_GB">Private-source Kodi add-on update channel</summary><platform>all</platform></extension>
+  <extension point="xbmc.addon.metadata"><summary lang="en_GB">Drakefrog Kodi Emby add-on update channel</summary><platform>all</platform></extension>
 </addon>

@@ -29,6 +29,12 @@ class RepositoryContracts(unittest.TestCase):
   self.assertTrue((ROOT/'sources/emby-next-gen/LICENSE.txt').is_file()); self.assertTrue((ROOT/'sources/arctic-fuse-3/LICENSE.txt').is_file())
   embycon=(ROOT/'sources/embycon/plugin.video.embycon/resources/lib/detail_routes.py').read_text(); fuse=(ROOT/'sources/arctic-fuse-3/shortcuts/skinvariables-shortcut-searchwidgets.json').read_text()
   self.assertIn('OPEN_DETAIL',embycon); self.assertIn('plugin.video.embycon',fuse)
+ def test_helper_provenance_and_service_dependency_closure(self):
+  helper=json.loads((ROOT/'helpers.json').read_text())['plugin.video.emby-next-gen']; self.assertEqual(len(helper['sha256']),64); self.assertTrue(helper['source_url'].startswith('https://'))
+  helper_xml=ET.parse(ROOT/'sources/plugin.video.emby-next-gen/addon.xml').getroot(); service_req=next(x.attrib['version'] for x in helper_xml.find('requires') if x.attrib['addon']=='plugin.service.emby-next-gen')
+  service=json.loads((ROOT/'versions.json').read_text())['plugin.service.emby-next-gen']; published=service['upstream_version']+'.'+str(service['custom_revision'])
+  def v(value): return tuple(int(x) for x in value.split('.'))
+  self.assertGreaterEqual(v(published),v(service_req)); self.assertEqual(helper_xml.attrib['version'],helper['version'])
  def test_embycon_patch_queue_has_no_line_ending_churn(self):
   patch=(ROOT/'patches/embycon/0001-customizations.patch').read_text(); files=[line for line in patch.splitlines() if line.startswith('diff --git')]
   self.assertLessEqual(len(files),15); self.assertLess(len(patch.splitlines()),2000)

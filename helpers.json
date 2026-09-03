@@ -1,0 +1,10 @@
+{
+  "plugin.video.emby-next-gen": {
+    "version": "10.1.2",
+    "source_url": "https://kodi.emby.tv/Public%20testing/emby-for-kodi-next-gen-12X/helpers/plugin.video.emby-next-gen-10.1.2.zip",
+    "sha256": "6f63f4edf45617b46529c7411d3b88bf3759af5009a45c78a3c406d2e7834217",
+    "update_policy": "manual: verify the official helper ZIP URL, SHA-256, addon.xml id/version and service dependency before updating versions.json and this record"
+  },
+  "plugin.audio.emby-next-gen": {"status": "not published: installed directory contains no addon.xml, only an icon"},
+  "plugin.image.emby-next-gen": {"status": "not published: installed directory contains no addon.xml, only an icon"}
+}
