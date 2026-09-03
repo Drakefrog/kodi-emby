@@ -1,19 +1,27 @@
 name: Upstream check
+
 on:
-  schedule: [{cron: '17 4 * * 1'}]
-  workflow_dispatch: {}
-permissions: {contents: write, pull-requests: write}
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.11'}
+        with:
+          python-version: '3.11'
       - id: check
         run: python3 tools/check_upstreams.py || test $? -eq 10
       - name: Replay patch queues on a review branch
-        env: {GH_TOKEN: ${{ github.token }}}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if grep -q '→' UPSTREAM_SYNC_REPORT.md; then
             branch="automation/upstream-${{ github.run_id }}"
@@ -30,4 +38,7 @@ jobs:
       - name: Publish sync diagnostics
         if: always()
         uses: actions/upload-artifact@v4
-        with: {name: upstream-sync-report, path: 'UPSTREAM_SYNC_REPORT.md', if-no-files-found: warn}
+        with:
+          name: upstream-sync-report
+          path: UPSTREAM_SYNC_REPORT.md
+          if-no-files-found: warn

@@ -1,16 +1,30 @@
 name: Release repository
+
 on:
   workflow_dispatch:
-    inputs: {release: {description: 'Type RELEASE to deploy', required: true}}
+    inputs:
+      release:
+        description: Type RELEASE to deploy
+        required: true
   push:
     tags: ['release-*']
-permissions: {contents: read, pages: write, id-token: write}
-concurrency: {group: pages, cancel-in-progress: false}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   deploy:
     if: github.event_name == 'push' || github.event.inputs.release == 'RELEASE'
     runs-on: ubuntu-latest
-    environment: {name: github-pages, url: ${{ steps.deploy.outputs.page_url }}}
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
@@ -18,7 +32,8 @@ jobs:
         with: {python-version: '3.11'}
       - run: python3 tools/restore_previous_release.py && make build test
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with: {path: dist}
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
       - id: deploy
         uses: actions/deploy-pages@v4
