@@ -45,9 +45,11 @@ but pushing a tag does not trigger Pages deployment.
 Kodi's repository master XML exposes one current version per unique add-on id,
 so it cannot offer a reliable previous-version picker. Each build retains the
 previous ZIP and lists it in `rollback.json`; manually install that exact
-historical URL to roll back. A prior controlled release can also be rebuilt by
-dispatching the workflow from the corresponding `main` commit. Do not create,
-move, or delete tags as part of this procedure.
+historical URL to roll back. To rebuild a prior controlled release, use its
+`release-*` tag as the historical source, restore that state into a new commit
+on `main` with a `release:` message, and push `main`; the tag itself remains a
+reference and never deploys directly. Do not create, move, or delete tags as
+part of this procedure.
 
 For an emergency stop, disable the Pages environment or the release workflow.
 The upstream checks only open review PRs and never merge or deploy. Do not run
