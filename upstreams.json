@@ -1,0 +1,5 @@
+{
+  "emby-next-gen": {"url": "https://github.com/MediaBrowser/plugin.video.emby.git", "branch": "next-gen-dev-python3", "commit": "5d2aa07"},
+  "embycon": {"url": "https://github.com/faush01/plugin.video.embycon.git", "branch": "main", "commit": "d445bca"},
+  "arctic-fuse-3": {"url": "https://github.com/jurialmunkey/skin.arctic.fuse.3.git", "branch": "omega", "commit": "c89780b"}
+}

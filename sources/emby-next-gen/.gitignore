@@ -1,0 +1,9 @@
+*.pyo
+*.pyc
+__pycache__/
+__local__/
+machine_guid
+/resources/media/Thumbs.db
+
+.idea/
+.DS_Store

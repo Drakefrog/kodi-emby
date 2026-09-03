@@ -1,0 +1,7 @@
+{
+  "repository.drakefrog.kodi-emby": {"source": "repository/repository.drakefrog.kodi-emby", "upstream_version": "1.0.0", "custom_revision": 1},
+  "plugin.service.emby-next-gen": {"source": "sources/emby-next-gen", "upstream_version": "12.4.23", "custom_revision": 1},
+  "plugin.video.emby-next-gen": {"source": "sources/plugin.video.emby-next-gen", "upstream_version": "10.1.2", "custom_revision": 1},
+  "plugin.video.embycon": {"source": "sources/embycon", "upstream_version": "1.12.2", "custom_revision": 1},
+  "skin.arctic.fuse.3": {"source": "sources/arctic-fuse-3", "upstream_version": "3.2.16", "custom_revision": 1}
+}
