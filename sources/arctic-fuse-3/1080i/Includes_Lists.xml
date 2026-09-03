@@ -796,6 +796,9 @@
                 <orientation>$PARAM[orientation]</orientation>
                 <preloaditems>$PARAM[preloaditems]</preloaditems>
                 <scrolltime tween="$PARAM[tween]">$PARAM[scrolltime]</scrolltime>
+                <!-- Detail recommendations hand off through the Info plot
+                     dialog; do not reopen the parent Info dialog here. -->
+                <onclick condition="!String.IsEmpty(ListItem.Property(emby_details)) + String.IsEmpty(ListItem.Property(emby_detail_action))">Action(Info)</onclick>
                 <itemlayout width="$PARAM[itemlayout_w]" height="$PARAM[itemlayout_h]">
                     <control type="group">
                         <left>$PARAM[offset_x]</left>

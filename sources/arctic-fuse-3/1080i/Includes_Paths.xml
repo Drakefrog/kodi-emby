@@ -93,6 +93,10 @@
     </variable>
 
     <variable name="Path_VideoInfo_OnlineSeasons">
+        <!-- Emby Next Gen dynamic Series items already carry the complete
+             query=Season folder path.  Let Fuse render that path directly
+             instead of requiring TMDb Helper metadata. -->
+        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + String.IsEqual(ListItem.Property(ItemType),Series) + !String.IsEmpty(ListItem.FolderPath)">$INFO[ListItem.FolderPath]</value>
         <value condition="String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_ID))">special://skin/extras/playlists/Null.xsp</value>
         <value condition="String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_Type))">special://skin/extras/playlists/Null.xsp</value>
         <value condition="String.IsEqual(Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_Type),tv)">plugin://plugin.video.themoviedb.helper/?info=seasons&amp;nextpage=false&amp;cacheonly=true&amp;tmdb_type=tv&amp;tmdb_id=$INFO[Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_ID)]</value>
@@ -301,6 +305,26 @@
 
         <value condition="String.IsEqual(Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_Type),tv) + String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.Monitor.Season))">plugin://plugin.video.themoviedb.helper?info=cast&amp;aggregate=true&amp;nextpage=false&amp;cacheonly=true&amp;tmdb_type=tv&amp;tmdb_id=$INFO[Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_ID)]</value>
 
+        <value>special://skin/extras/playlists/Null.xsp</value>
+    </variable>
+
+    <variable name="Path_VideoInfo_EmbyCast">
+        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)] + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=DETAIL_CAST&amp;id=,]</value>
+        <value>special://skin/extras/playlists/Null.xsp</value>
+    </variable>
+
+    <variable name="Path_VideoInfo_EmbySimilar">
+        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)] + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=DETAIL_SIMILAR&amp;id=,]</value>
+        <value>special://skin/extras/playlists/Null.xsp</value>
+    </variable>
+
+    <variable name="Path_VideoInfo_EmbyPersonMovies">
+        <value condition="String.IsEqual(ListItem.Property(person_source),emby) + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=&amp;media_type=movies]</value>
+        <value>special://skin/extras/playlists/Null.xsp</value>
+    </variable>
+
+    <variable name="Path_VideoInfo_EmbyPersonTV">
+        <value condition="String.IsEqual(ListItem.Property(person_source),emby) + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=&amp;media_type=tvshows]</value>
         <value>special://skin/extras/playlists/Null.xsp</value>
     </variable>
 

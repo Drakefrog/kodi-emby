@@ -105,7 +105,7 @@
                                 <param name="include_top">!String.IsEmpty(Window.Property(path))</param>
                                 <param name="include_closebutton">true</param>
                             </include>
-                            <include condition="$PARAM[include_artwork] + !String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id))">DialogCustomPlot_Lists</include>
+                            <include condition="$PARAM[include_artwork] + [[!String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id))] | [String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))]]">DialogCustomPlot_Lists</include>
 
                             <include condition="!String.IsEmpty(Window.Property(path))">DialogCustomPlot_Switcher</include>
 
@@ -159,6 +159,7 @@
                     <onleft>9000</onleft>
                     <onup>9000</onup>
                     <ondown>noop</ondown>
+                    <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Container(7001).ListItem.Property(id))">RunPlugin(plugin://plugin.video.embycon/?mode=OPEN_DETAIL&amp;item_id=$INFO[Container(7001).ListItem.Property(id)]&amp;item_type=$INFO[Container(7001).ListItem.Property(ItemType)])</onclick>
                     <onclick>Dialog.Close(1114)</onclick>
                     <onclick>Dialog.Close(movieinformation)</onclick>
                     <onclick>Dialog.Close(musicinformation)</onclick>
@@ -167,7 +168,7 @@
                     <onclick>Dialog.Close(1141,true)</onclick>
                     <onclick>Dialog.Close(videobookmarks,true)</onclick>
                     <onclick>Skin.SetString(InfoPanel.FullSwitch,Full,Home)</onclick>
-                    <onclick>RunScript(plugin.video.themoviedb.helper,add_path=$INFO[Container(7001).ListItem.FolderPath],call_auto=1190,origin_tmdb_type=$INFO[Window.Property(origin_tmdb_type)],origin_tmdb_id=$INFO[Window.Property(origin_tmdb_id)],origin_season=$INFO[Window.Property(origin_season)],origin_episode=$INFO[Window.Property(origin_episode)],return)</onclick>
+                    <onclick condition="!String.IsEqual(Window.Property(emby_source),emby)">RunScript(plugin.video.themoviedb.helper,add_path=$INFO[Container(7001).ListItem.FolderPath],call_auto=1190,origin_tmdb_type=$INFO[Window.Property(origin_tmdb_type)],origin_tmdb_id=$INFO[Window.Property(origin_tmdb_id)],origin_season=$INFO[Window.Property(origin_season)],origin_episode=$INFO[Window.Property(origin_episode)],return)</onclick>
                     <content>$INFO[Window.Property(ModePath)]</content>
                     <visible>!String.IsEmpty(Window.Property(ModePath))</visible>
                 </include>
@@ -195,12 +196,36 @@
             <onfocus>ClearProperty(ModePath)</onfocus>
             <onfocus>ClearProperty(ModeName)</onfocus>
             <onclick>Skin.SetString(InfoPanel.FullSwitch,Full,Home)</onclick>
-            <onclick>RunScript(plugin.video.themoviedb.helper,add_path=$INFO[Window.Property(path)],call_auto=1190,origin_tmdb_type=$INFO[Window.Property(origin_tmdb_type)],origin_tmdb_id=$INFO[Window.Property(origin_tmdb_id)],origin_season=$INFO[Window.Property(origin_season)],origin_episode=$INFO[Window.Property(origin_episode)],return)</onclick>
-            <onclick>Dialog.Close(1114,true)</onclick>
+            <!-- Expand the Emby identity while dialog 1114 still owns its properties.
+                 EmbyCon then closes the modal stack and opens the target item directly. -->
+            <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_item_id))">RunPlugin(plugin://plugin.video.embycon/?mode=OPEN_DETAIL&amp;item_id=$INFO[Window.Property(emby_item_id)]&amp;item_type=$INFO[Window.Property(emby_item_type)])</onclick>
+            <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_item_id))">Dialog.Close(1114,true)</onclick>
+            <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_item_id))">Dialog.Close(movieinformation,true)</onclick>
+            <onclick condition="!String.IsEqual(Window.Property(emby_source),emby)">RunScript(plugin.video.themoviedb.helper,add_path=$INFO[Window.Property(path)],call_auto=1190,origin_tmdb_type=$INFO[Window.Property(origin_tmdb_type)],origin_tmdb_id=$INFO[Window.Property(origin_tmdb_id)],origin_season=$INFO[Window.Property(origin_season)],origin_episode=$INFO[Window.Property(origin_episode)],return)</onclick>
+            <onclick condition="!String.IsEqual(Window.Property(emby_source),emby)">Dialog.Close(1114,true)</onclick>
             <onclick>Dialog.Close(videoosd,true)</onclick>
             <onclick>Dialog.Close(1140,true)</onclick>
             <onclick>Dialog.Close(1141,true)</onclick>
             <onclick>Dialog.Close(videobookmarks,true)</onclick>
+        </include>
+        <!-- Emby PersonIds work lists are lazy and never routed through TMDb. -->
+        <include content="Button_Underline_Switcher" condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">
+            <param name="id">9021</param><param name="groupid">9121</param><label>$LOCALIZE[342]</label><altlabel>$LOCALIZE[342]</altlabel><param name="icon">special://skin/extras/icons/film.png</param>
+            <onfocus>SetProperty(ModeName,$LOCALIZE[342])</onfocus>
+            <onfocus>SetProperty(ModePath,plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=$INFO[Window.Property(emby_person_id)]&amp;media_type=movies)</onfocus>
+            <onclick condition="!Container(7001).IsUpdating + !Integer.IsEqual(Container(7001).NumItems,0)">SetFocus(7001)</onclick>
+        </include>
+        <include content="Button_Underline_Switcher" condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">
+            <param name="id">9022</param><param name="groupid">9122</param><label>$LOCALIZE[20343]</label><altlabel>$LOCALIZE[20343]</altlabel><param name="icon">special://skin/extras/icons/tv.png</param>
+            <onfocus>SetProperty(ModeName,$LOCALIZE[20343])</onfocus>
+            <onfocus>SetProperty(ModePath,plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=$INFO[Window.Property(emby_person_id)]&amp;media_type=tvshows)</onfocus>
+            <onclick condition="!Container(7001).IsUpdating + !Integer.IsEqual(Container(7001).NumItems,0)">SetFocus(7001)</onclick>
+        </include>
+        <include content="Button_Underline_Switcher" condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">
+            <param name="id">9023</param><param name="groupid">9123</param><label>$LOCALIZE[31050]</label><altlabel>$LOCALIZE[31050]</altlabel><param name="icon">special://skin/extras/icons/director.png</param>
+            <onfocus>SetProperty(ModeName,$LOCALIZE[31050])</onfocus>
+            <onfocus>SetProperty(ModePath,plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=$INFO[Window.Property(emby_person_id)]&amp;media_type=crew)</onfocus>
+            <onclick condition="!Container(7001).IsUpdating + !Integer.IsEqual(Container(7001).NumItems,0)">SetFocus(7001)</onclick>
         </include>
         <!-- Movies -->
         <include content="Button_Underline_Switcher" condition="!String.IsEmpty(Window.Property(tmdb_id)) + String.IsEqual(Window.Property(tmdb_type),person)">

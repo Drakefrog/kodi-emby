@@ -12,14 +12,16 @@ jobs:
         with: {python-version: '3.11'}
       - id: check
         run: python3 tools/check_upstreams.py || test $? -eq 10
-      - name: Create review-only sync PR
+      - name: Replay patch queues on a review branch
         env: {GH_TOKEN: ${{ github.token }}}
         run: |
           if grep -q '→' UPSTREAM_SYNC_REPORT.md; then
             branch="automation/upstream-$(date +%Y%m%d)"
             git checkout -b "$branch"
-            git add UPSTREAM_SYNC_REPORT.md
-            git -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot] commit -m 'chore: report upstream updates'
+            make sync-emby-next-gen sync-embycon sync-arctic-fuse-3
+            make build test
+            git add upstreams.json vendor sources patches UPSTREAM_SYNC_REPORT.md
+            git -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot] commit -m 'chore: prepare upstream sync'
             git push origin "$branch"
-            gh pr create --base main --head "$branch" --title 'chore: review upstream updates' --body-file UPSTREAM_SYNC_REPORT.md || true
+            gh pr create --base main --head "$branch" --title 'chore: review upstream sync' --body-file UPSTREAM_SYNC_REPORT.md || true
           fi

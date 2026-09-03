@@ -651,6 +651,14 @@
             <value>Path_SearchTerm_SingleEncoded</value>
         </rule>
         <rule>
+            <condition>{item_path}&lt;&lt;plugin://plugin.service.emby-next-gen</condition>
+            <value>Path_SearchTerm_SingleEncoded</value>
+        </rule>
+        <rule>
+            <condition>{item_path}&lt;&lt;plugin://plugin.video.embycon</condition>
+            <value>Path_SearchTerm_SingleEncoded</value>
+        </rule>
+        <rule>
             <condition>True</condition>
             <value>Path_SearchTerm</value>
         </rule>

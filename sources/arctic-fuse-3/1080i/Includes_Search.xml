@@ -158,11 +158,11 @@
     <include name="Search_Term_DoubleEncoder">
         <include content="Object_Hidden_List">
             <param name="id">310</param>
-            <content>plugin://script.skinvariables/?info=get_encoded_string&amp;unencoded_paths=true&amp;&amp;$INFO[Control.GetLabel(3000).index(1)]</content>
+            <content>plugin://script.skinvariables/?info=get_encoded_string&amp;infolabel=Control.GetLabel(3000).index(1)&amp;&amp;$INFO[Control.GetLabel(3000).index(1)]</content>
         </include>
         <include content="Object_Hidden_List">
             <param name="id">320</param>
-            <content>plugin://script.skinvariables/?info=get_encoded_string&amp;unencoded_paths=true&amp;&amp;$INFO[Container(310).ListItem.Label]</content>
+            <content>plugin://script.skinvariables/?info=get_encoded_string&amp;infolabel=Container(310).ListItem.Label&amp;&amp;$INFO[Container(310).ListItem.Label]</content>
         </include>
     </include>
 

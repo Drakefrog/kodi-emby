@@ -25,13 +25,15 @@ def main():
             source=ROOT/entry["source"]; addon_xml=source/"addon.xml"; root=ET.parse(addon_xml).getroot()
             if root.attrib["id"] != addon_id: raise ValueError(f"{source}: id mismatch")
             v=version(entry); root.attrib["version"]=v
-            target=out/addon_id/v; target.mkdir(parents=True)
-            stage=target/addon_id; shutil.copytree(source, stage, ignore=shutil.ignore_patterns(".git", ".github", "tests", "__pycache__", "*.pyc", "*.bak", "*backup*"))
+            # Kodi joins datadir with addon id and archive name: never insert a
+            # version directory between them.
+            target=out/addon_id; target.mkdir(parents=True)
+            stage=Path(td)/"stage"/addon_id; stage.parent.mkdir(exist_ok=True); shutil.copytree(source, stage, ignore=shutil.ignore_patterns(".git", ".github", "tests", "__pycache__", "*.pyc", "*.bak", "*backup*"))
             ET.ElementTree(root).write(stage/"addon.xml", encoding="utf-8", xml_declaration=True)
             archive=target/f"{addon_id}-{v}.zip"
             with zipfile.ZipFile(archive,"w",zipfile.ZIP_DEFLATED) as z:
                 for p in stage.rglob("*"):
-                    if p.is_file() and allowed(p.relative_to(stage)): z.write(p, p.relative_to(target))
+                    if p.is_file() and allowed(p.relative_to(stage)): z.write(p, p.relative_to(stage.parent))
             rows.append(root)
         addons=ET.Element("addons")
         for row in sorted(rows,key=lambda x:x.attrib["id"]): addons.append(row)

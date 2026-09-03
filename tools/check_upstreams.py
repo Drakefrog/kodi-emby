@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 data=json.loads((ROOT/'upstreams.json').read_text()); changed=[]
 for name, upstream in data.items():
     tip=subprocess.check_output(['git','ls-remote',upstream['url'],f"refs/heads/{upstream['branch']}"]).decode().split()[0]
-    if not tip.startswith(upstream['commit']): changed.append((name,upstream['commit'],tip))
+    if not tip.startswith(upstream['upstream_commit']): changed.append((name,upstream['upstream_commit'],tip))
 (ROOT/'UPSTREAM_SYNC_REPORT.md').write_text('# Upstream sync report\n\n'+('No updates.\n' if not changed else '\n'.join(f'- {n}: `{old}` → `{new}`' for n,old,new in changed)+'\n'))
 if changed:
     raise SystemExit(10)

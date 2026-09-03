@@ -321,7 +321,8 @@
             <param name="widget_showoverlay">true</param>
             <param name="altvisible">true</param>
             <onfocus>SetProperty(CurrentID,$INFO[Window.Property(BaseID)])</onfocus>
-            <content>$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_movies&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
+            <content condition="String.IsEqual(ListItem.Property(person_source),emby)">$VAR[Path_VideoInfo_EmbyPersonMovies]</content>
+            <content condition="String.IsEmpty(ListItem.Property(person_source))">$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_movies&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
             <include>DialogInfo_Widgets_Action</include>
         </include>
         <include content="Widget_Info_Row">
@@ -339,10 +340,11 @@
             <param name="visible">$EXP[Exp_InfoDialogs_WidgetsGroup_HasFocus]</param>
             <param name="altvisible">!String.IsEqual(Window.Property(CurrentID),Window.Property(BaseID))</param>
             <onfocus>SetProperty(CurrentID,$INFO[Window.Property(BaseID)])</onfocus>
-            <content>$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_tvshows&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
+            <content condition="String.IsEqual(ListItem.Property(person_source),emby)">$VAR[Path_VideoInfo_EmbyPersonTV]</content>
+            <content condition="String.IsEmpty(ListItem.Property(person_source))">$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_tvshows&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
             <include>DialogInfo_Widgets_Action</include>
         </include>
-        <include content="Widget_Info_Row">
+        <include content="Widget_Info_Row" condition="String.IsEmpty(ListItem.Property(person_source))">
             <param name="id">03</param>
             <param name="baseid">50</param>
             <param name="groupid">5103</param>
@@ -366,7 +368,24 @@
     <include name="DialogInfo_VideoWidgets">
 
         <!-- Cast-->
-        <include content="Widget_Info_Row" condition="![!Skin.HasSetting(Info.UseLocalCast) + $EXP[Exp_TMDbHelper_IsData]]">
+        <include content="Widget_Info_Row" condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)]">
+            <param name="id">50</param>
+            <param name="baseid" />
+            <param name="basegroupid">51</param>
+            <param name="label">$LOCALIZE[206]</param>
+            <param name="include">List_Poster_Row</param>
+            <param name="widgetfade_include">true</param>
+            <param name="set_widgetcontainer">false</param>
+            <param name="menuid">8000</param>
+            <param name="detailed">true</param>
+            <param name="widget_hideartwork">true</param>
+            <param name="widget_showoverlay">true</param>
+            <param name="altvisible">true</param>
+            <onfocus>SetProperty(CurrentID,$INFO[Window.Property(BaseID)])</onfocus>
+            <content>$VAR[Path_VideoInfo_EmbyCast]</content>
+            <include>DialogInfo_Widgets_Action</include>
+        </include>
+        <include content="Widget_Info_Row" condition="String.IsEmpty(ListItem.Property(emby_details)) + ![!Skin.HasSetting(Info.UseLocalCast) + $EXP[Exp_TMDbHelper_IsData]]">
             <param name="id">50</param>
             <param name="baseid" />
             <param name="basegroupid">51</param>
@@ -381,7 +400,7 @@
             <param name="altvisible">true</param>
             <onfocus>SetProperty(CurrentID,$INFO[Window.Property(BaseID)])</onfocus>
         </include>
-        <include content="Widget_Info_Row" condition="!Skin.HasSetting(Info.UseLocalCast) + $EXP[Exp_TMDbHelper_IsData]">
+        <include content="Widget_Info_Row" condition="String.IsEmpty(ListItem.Property(emby_details)) + !Skin.HasSetting(Info.UseLocalCast) + $EXP[Exp_TMDbHelper_IsData]">
             <param name="id">50</param>
             <param name="baseid">50</param>
             <param name="basegroupid">51</param>
@@ -474,7 +493,7 @@
         </include>
 
         <!-- Seasons and Episodes -->
-        <include content="Widget_Info_Row" condition="!Skin.HasSetting(VideoInfo.Widgets.DisableSeasons) + [String.IsEqual(ListItem.DBType,tvshow) | String.IsEqual(ListItem.DBType,season) | String.IsEqual(ListItem.DBType,episode)] + $EXP[Exp_TMDbHelper_IsData]">
+        <include content="Widget_Info_Row" condition="!Skin.HasSetting(VideoInfo.Widgets.DisableSeasons) + [[[String.IsEqual(ListItem.DBType,tvshow) | String.IsEqual(ListItem.DBType,season) | String.IsEqual(ListItem.DBType,episode)] + $EXP[Exp_TMDbHelper_IsData]] | [!String.IsEmpty(ListItem.Property(emby_details)) + String.IsEqual(ListItem.Property(ItemType),Series)]]">
             <param name="id">18</param>
             <param name="baseid">50</param>
             <param name="basegroupid">51</param>
@@ -788,7 +807,24 @@
         </include>
 
         <!-- Recommendations -->
-        <include content="Widget_Info_Row" condition="!Skin.HasSetting(VideoInfo.Widgets.DisableRecommendations) + $EXP[Exp_TMDbHelper_IsData]">
+        <include content="Widget_Info_Row" condition="!String.IsEmpty(ListItem.Property(emby_details)) + !Skin.HasSetting(VideoInfo.Widgets.DisableRecommendations) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)]">
+            <param name="id">16</param>
+            <param name="baseid">50</param>
+            <param name="basegroupid">51</param>
+            <param name="label">$LOCALIZE[31018]</param>
+            <param name="include">List_Poster_Row</param>
+            <param name="visible">$EXP[Exp_InfoDialogs_WidgetsGroup_HasFocus]</param>
+            <param name="widgetfade_include">true</param>
+            <param name="set_widgetcontainer">false</param>
+            <param name="menuid">8000</param>
+            <param name="widget_hideartwork">true</param>
+            <param name="widget_showoverlay">true</param>
+            <param name="altvisible">!String.IsEqual(Window.Property(CurrentID),Window.Property(BaseID))</param>
+            <onfocus>SetProperty(CurrentID,$INFO[Window.Property(BaseID)])</onfocus>
+            <content>$VAR[Path_VideoInfo_EmbySimilar]</content>
+            <include>DialogInfo_Widgets_Action</include>
+        </include>
+        <include content="Widget_Info_Row" condition="String.IsEmpty(ListItem.Property(emby_details)) + !Skin.HasSetting(VideoInfo.Widgets.DisableRecommendations) + $EXP[Exp_TMDbHelper_IsData]">
             <param name="id">16</param>
             <param name="baseid">50</param>
             <param name="basegroupid">51</param>
@@ -967,7 +1003,7 @@
                 </item>
             </content>
             <include condition="Window.IsVisible(DialogVideoInfo.xml) + ![Skin.HasSetting(VideoInfo.Widgets.DisableOnlineGallery) | !$EXP[Exp_TMDbHelper_IsData]] + !String.IsEqual(ListItem.Property(tmdb_type),person)">DialogInfo_VideoFanartContent</include>
-            <include condition="Window.IsVisible(DialogVideoInfo.xml) + ![Skin.HasSetting(VideoInfo.Widgets.DisableOnlineGallery) | !$EXP[Exp_TMDbHelper_IsData]] + String.IsEqual(ListItem.Property(tmdb_type),person)">DialogInfo_PersonImageContent</include>
+            <include condition="Window.IsVisible(DialogVideoInfo.xml) + ![Skin.HasSetting(VideoInfo.Widgets.DisableOnlineGallery) | !$EXP[Exp_TMDbHelper_IsData]] + String.IsEqual(ListItem.Property(tmdb_type),person) + String.IsEmpty(ListItem.Property(person_source))">DialogInfo_PersonImageContent</include>
         </include>
     </include>
 
@@ -1053,6 +1089,13 @@
             <onclick>SetProperty(origin_season,$VAR[Path_InfoParams_Season],1114)</onclick>
             <onclick>SetProperty(origin_episode,$VAR[Path_InfoParams_Episode],1114)</onclick>
             <onclick>ActivateWindow(1114)</onclick>
+        </definition>
+    </include>
+
+    <!-- Kept as a named hook for future Emby-backed detail navigation. -->
+    <include name="DialogInfo_EmbyDetails_Action">
+        <definition>
+            <onclick>Action(info)</onclick>
         </definition>
     </include>
 
@@ -1564,6 +1607,7 @@
                         <param name="id">4001</param>
                         <param name="control">button</param>
                         <label>$VAR[Label_DialogInfo_PlayButton]</label>
+                        <onclick condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)]">Dialog.Close(1190)</onclick>
                         <onclick>$VAR[Action_DialogInfo_PlayMedia]</onclick>
                     </include>
 

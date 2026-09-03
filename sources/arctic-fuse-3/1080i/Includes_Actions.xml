@@ -31,6 +31,12 @@
     </include>
 
     <variable name="Action_DialogInfo_PlayMedia">
+        <!-- Prefer the authenticated EmbyCon playback path for Emby items. -->
+        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + String.IsEqual(ListItem.Property(ItemType),Movie) + !String.IsEmpty(ListItem.Property(id))">RunScript(plugin.video.embycon,0,?mode=PLAY&amp;item_id=$INFO[ListItem.Property(id)])</value>
+
+        <!-- A Series is a folder; its playable target is an Episode. -->
+        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + String.IsEqual(ListItem.Property(ItemType),Series) + !String.IsEmpty(ListItem.FileNameAndPath)">ActivateWindow(Videos,$INFO[ListItem.FileNameAndPath],return)</value>
+
         <!-- Play FileNameAndPath -->
         <value condition="!String.IsEmpty(ListItem.FileNameAndPath) + !$EXP[Exp_IsFolder]">RunScript(plugin.video.themoviedb.helper,close_dialog=1190,"playmedia=$INFO[ListItem.FileNameAndPath]")</value>
 
@@ -356,7 +362,6 @@
         <value condition="Skin.String(CustomRating.Movies.Item01,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.Movies.Item01,MDBList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.Movies.Item01,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
-        <value condition="Skin.String(CustomRating.Movies.Item01,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.Movies.Item01,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 
         <value condition="Skin.String(CustomRating.Movies.Item02,TMDb)">Skin.Reset(TMDbHelper.DisableRatings)</value>
@@ -367,7 +372,6 @@
         <value condition="Skin.String(CustomRating.Movies.Item02,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.Movies.Item02,MDBList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.Movies.Item02,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
-        <value condition="Skin.String(CustomRating.Movies.Item02,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.Movies.Item02,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 
         <value condition="Skin.String(CustomRating.TVShows.Item01,TMDb)">Skin.Reset(TMDbHelper.DisableRatings)</value>
@@ -378,7 +382,6 @@
         <value condition="Skin.String(CustomRating.TVShows.Item01,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.TVShows.Item01,MDBList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.TVShows.Item01,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
-        <value condition="Skin.String(CustomRating.TVShows.Item01,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.TVShows.Item01,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 
         <value condition="Skin.String(CustomRating.TVShows.Item02,TMDb)">Skin.Reset(TMDbHelper.DisableRatings)</value>
@@ -389,7 +392,6 @@
         <value condition="Skin.String(CustomRating.TVShows.Item02,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.TVShows.Item02,MDBList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.TVShows.Item02,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
-        <value condition="Skin.String(CustomRating.TVShows.Item02,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
         <value condition="Skin.String(CustomRating.TVShows.Item02,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 
         <value>Skin.SetBool(TMDbHelper.DisableRatings)</value>

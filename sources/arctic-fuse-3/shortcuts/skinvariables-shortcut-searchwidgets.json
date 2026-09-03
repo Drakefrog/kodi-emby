@@ -40,5 +40,19 @@
         "path": "DefaultSearch-TMDBShows",
         "target": "videos",
         "widget_style": "Poster"
+    },
+    {
+        "label": "电影",
+        "icon": "special://skin/extras/icons/film.png",
+        "path": "plugin://plugin.video.embycon/?mode=FUSE_SEARCH&item_type=Movie&query=",
+        "target": "videos",
+        "widget_style": "Poster"
+    },
+    {
+        "label": "剧集",
+        "icon": "special://skin/extras/icons/tv.png",
+        "path": "plugin://plugin.video.embycon/?mode=FUSE_SEARCH&item_type=Series&query=",
+        "target": "videos",
+        "widget_style": "Poster"
     }
 ]
