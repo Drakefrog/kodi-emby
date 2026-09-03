@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, json, zipfile
+import argparse, hashlib, json, zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
 ROOT=Path(__file__).resolve().parents[1]
@@ -16,9 +16,9 @@ def main():
         v=e["upstream_version"]+"."+str(e["custom_revision"]); assert found[addon_id]==v
         z=ROOT/"dist"/addon_id/f"{addon_id}-{v}.zip"; assert z.exists(), z
         with zipfile.ZipFile(z) as f:
-            names=f.namelist(); assert all(n.startswith(addon_id+"/") for n in names); assert not any("/.git/" in n or "/.github/" in n or "/tests/" in n or "__pycache__" in n or n.endswith(".pyc") or "backup" in n.lower() for n in names)
+            names=f.namelist(); assert all(n.startswith(addon_id+"/") for n in names); assert not any("/.git/" in n or "/.github/" in n or "/tests/" in n or "__pycache__" in n or n.endswith(".pyc") or n.endswith(".bak") or n.endswith(".git.broken-backup") for n in names)
             xml=ET.fromstring(f.read(addon_id+"/addon.xml")); assert xml.attrib["id"]==addon_id and xml.attrib["version"]==v
-    assert (ROOT/"dist/addons.xml.md5").read_text().strip()
+    assert hashlib.md5((ROOT/"dist/addons.xml").read_bytes()).hexdigest() == (ROOT/"dist/addons.xml.md5").read_text().strip()
     rollback=json.loads((ROOT/"dist/rollback.json").read_text())
     for addon_id,e in versions.items(): assert f"{addon_id}-{e['upstream_version']}.{e['custom_revision']}.zip" in rollback[addon_id]
 if __name__=="__main__": main()

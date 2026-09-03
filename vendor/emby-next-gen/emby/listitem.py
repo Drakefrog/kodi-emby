@@ -157,7 +157,7 @@ def set_ListItem_from_Kodi_database(KodiItem, Path=None, ContentLookup=True):
             InfoTags.setDuration(int(float(KodiItem['duration'])))
 
         if KodiItem['artwork']:
-            ListItem.setArt(utils.add_image_user_agent_to_artwork(KodiItem['artwork']))
+            ListItem.setArt(KodiItem['artwork'])
 
         if KodiItem.get('genre'):
             InfoTags.setGenres(KodiItem['genre'].split("/"))
@@ -636,7 +636,7 @@ def set_ListItem(item, ServerId, Path=None, ContentLookup=True, ContentSupported
         cast = ()
 
         for person in item['ArtistItems']:
-            cast += ((xbmc.Actor(person['Name'], "Artist", len(cast) + 1, utils.add_image_user_agent(person['imageurl']))),)
+            cast += ((xbmc.Actor(person['Name'], "Artist", len(cast) + 1, person['imageurl'])),)
 
     if IsVideo and 'People' in item and item['People']:
         cast = ()
@@ -644,7 +644,7 @@ def set_ListItem(item, ServerId, Path=None, ContentLookup=True, ContentSupported
         for person in item['People']:
             if person['Type'] in ("Actor", 'Director', 'GuestStar'):
                 if str(person['imageurl']).startswith("http"):
-                    ImageUrl = utils.add_image_user_agent(person['imageurl'])
+                    ImageUrl = person['imageurl']
                 else:
                     ImageUrl = ""
 
@@ -659,10 +659,10 @@ def set_ListItem(item, ServerId, Path=None, ContentLookup=True, ContentSupported
         for KodiArtworkId, ArtworkValue in list(item['KodiArtwork'].items()):
             if KodiArtworkId == 'fanart':
                 for KodiArtworkIdFanart, ArtworkValueFanart in list(ArtworkValue.items()):
-                    ArtworkData[KodiArtworkIdFanart] = utils.add_image_user_agent(ArtworkValueFanart)
+                    ArtworkData[KodiArtworkIdFanart] = ArtworkValueFanart
             else:
                 if ArtworkValue:
-                    ArtworkData[KodiArtworkId] = utils.add_image_user_agent(ArtworkValue)
+                    ArtworkData[KodiArtworkId] = ArtworkValue
 
         listitem.setArt(ArtworkData)
 

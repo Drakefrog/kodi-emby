@@ -1668,16 +1668,13 @@ class VideoDatabase:
 
         for ArtworkData in ArtworksData:
             if ArtworkData[1] in ("poster", "thumb", "landscape"):
-                ArtworkPath = utils.get_image_path_without_options(ArtworkData[2])
                 if Download:
-                    UrlMod = utils.add_image_path_suffix(ArtworkData[2].replace("-download", ""), "-download")
-                    UrlMod = f"{UrlMod}&redirect-limit=1000&failonerror=false" if "|" in UrlMod else f"{UrlMod}|redirect-limit=1000&failonerror=false"
+                    UrlMod = f"{ArtworkData[2]}-download|redirect-limit=1000&failonerror=false"
                 else:
-                    ArtworkPath = ArtworkPath.replace("-download", "")
-                    UrlMod = utils.add_image_user_agent(ArtworkPath)
+                    UrlMod = ArtworkData[2].replace("-download|redirect-limit=1000&failonerror=false", "")
 
                 SQLData += ((UrlMod, ArtworkData[0]),)
-                ArtworksNoUrlParam += ((utils.add_image_user_agent(ArtworkPath),),)
+                ArtworksNoUrlParam += ((ArtworkData[2].replace("|redirect-limit=1000&failonerror=false", ""),),)
 
         if SQLData:
             self.cursor.executemany("UPDATE art SET url = ? WHERE art_id = ?", SQLData)

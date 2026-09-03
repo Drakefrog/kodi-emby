@@ -20,9 +20,6 @@ import xbmcgui
 Addon = xbmcaddon.Addon("plugin.service.emby-next-gen")
 addon_version = Addon.getAddonInfo('version')
 addon_name = Addon.getAddonInfo('name')
-ClientName = "Infuse-Direct"
-ClientVersion = "8.0.4"
-ClientUserAgent = f"{ClientName}/{ClientVersion}"
 CustomDialogParameters = (Addon.getAddonInfo('path'), "default", "1080i")
 WidgetsRefreshLock = threading.Lock()
 MappingIds = {"Trailer": "999999987", 'Season': "999999989", 'Series': "999999990", 'MusicAlbum': "999999991", 'MusicGenre': "999999992", "Studio": "999999994", "Tag": "999999993", "Genre": "999999995", "MusicArtist": "999999996"}
@@ -68,7 +65,6 @@ enablehttp2 = False
 MinimumSetup = ""
 autoclose = 5
 maxnodeitems = 25
-DynamicPageSize = 50
 deviceName = "Kodi"
 useDirectPaths = False
 menuOptions = False
@@ -303,55 +299,6 @@ noimagejpg = b''
 NextGenOnline = threading.Event()
 ProgressBars = [True, {}] # [ProgressbarsEnabled, {Header, Message, Value, ProgressBar}]
 ProgressBarsLock = threading.Lock()
-
-def _split_url_options(Path):
-    if not isinstance(Path, str):
-        return Path, ""
-
-    PathData = Path.split("|", 1)
-    if len(PathData) == 1:
-        return PathData[0], ""
-
-    return PathData[0], PathData[1]
-
-def add_image_user_agent(Path):
-    """Add the Kodi HTTP User-Agent option to local Emby picture URLs."""
-    if not isinstance(Path, str) or not Path.startswith("http://127.0.0.1:57342/picture/"):
-        return Path
-
-    ImagePath, Options = _split_url_options(Path)
-    if "user-agent=" in Options.lower():
-        return Path
-
-    if Options:
-        return f"{ImagePath}|{Options}&User-Agent={ClientUserAgent}"
-
-    return f"{ImagePath}|User-Agent={ClientUserAgent}"
-
-def add_image_user_agent_to_artwork(Artwork):
-    """Apply the image protocol option while preserving artwork structures."""
-    if isinstance(Artwork, dict):
-        return {Key: add_image_user_agent_to_artwork(Value) for Key, Value in Artwork.items()}
-    if isinstance(Artwork, tuple):
-        return tuple(add_image_user_agent_to_artwork(Value) for Value in Artwork)
-    if isinstance(Artwork, list):
-        return [add_image_user_agent_to_artwork(Value) for Value in Artwork]
-
-    return add_image_user_agent(Artwork)
-
-def get_image_path_without_options(Path):
-    if not isinstance(Path, str) or not Path.startswith("http://127.0.0.1:57342/picture/"):
-        return Path
-
-    return _split_url_options(Path)[0]
-
-def add_image_path_suffix(Path, Suffix):
-    if not isinstance(Path, str) or not Path.startswith("http://127.0.0.1:57342/picture/"):
-        return f"{Path}{Suffix}"
-
-    ImagePath, Options = _split_url_options(Path)
-    ImagePath = f"{ImagePath}{Suffix}"
-    return f"{ImagePath}|{Options}" if Options else ImagePath
 
 # Progress bars
 def create_ProgressBar(TaskId, Header, Message):
@@ -1075,7 +1022,6 @@ def InitSettings():
     load_settings_int('displayMessage')
     load_settings_int('newContentTime')
     load_settings_int('maxnodeitems')
-    load_settings_int('DynamicPageSize')
     load_settings_int('videoBitrate')
     load_settings_int('audioBitrate')
     load_settings_int('startupDelay')

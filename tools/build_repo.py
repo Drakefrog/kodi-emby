@@ -14,7 +14,7 @@ def version(entry):
     return entry["upstream_version"] + "." + str(entry["custom_revision"])
 
 def allowed(path):
-    return not any(x in EXCLUDED_DIRS for x in path.parts) and not any(str(path).endswith(x) for x in EXCLUDED_SUFFIXES) and "backup" not in path.name.lower()
+    return not any(x in EXCLUDED_DIRS for x in path.parts) and not any(str(path).endswith(x) for x in EXCLUDED_SUFFIXES) and path.name != ".git.broken-backup"
 
 def main():
     versions=json.loads((ROOT/"versions.json").read_text())

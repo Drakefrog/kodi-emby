@@ -77,10 +77,10 @@ class CommonDatabase:
         for ArtworkId, ImagePath in list(KodiArtworks.items()):
             if ArtworkId != "fanart":
                 if ImagePath:
-                    SQLData += ((KodiId, KodiMediaType, ArtworkId, utils.add_image_user_agent(ImagePath)),)
+                    SQLData += ((KodiId, KodiMediaType, ArtworkId, ImagePath),)
             else:
                 for ArtworkFanArtId, ImageFanArtPath in list(KodiArtworks['fanart'].items()):
-                    SQLData += ((KodiId, KodiMediaType, ArtworkFanArtId, utils.add_image_user_agent(ImageFanArtPath)),)
+                    SQLData += ((KodiId, KodiMediaType, ArtworkFanArtId, ImageFanArtPath),)
 
         if SQLData:
             self.cursor.executemany("INSERT INTO art(media_id, media_type, type, url) VALUES (?, ?, ?, ?)", SQLData)

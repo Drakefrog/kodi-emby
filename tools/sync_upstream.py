@@ -11,12 +11,21 @@ from xml.etree import ElementTree as ET
 ROOT=Path(__file__).resolve().parents[1]
 def run(*args, cwd=None): return subprocess.run(args,cwd=cwd,text=True,capture_output=True)
 def main():
- p=argparse.ArgumentParser(); p.add_argument('component'); p.add_argument('--commit'); a=p.parse_args()
+ global ROOT
+ p=argparse.ArgumentParser(); p.add_argument('component'); p.add_argument('--commit'); p.add_argument('--root', type=Path); a=p.parse_args()
+ if a.root: ROOT=a.root.resolve()
  meta=json.loads((ROOT/'upstreams.json').read_text())[a.component]
  with tempfile.TemporaryDirectory(prefix='kodi-emby-sync-') as td:
   td=Path(td); clone=td/'clone'; result=run('git','clone','--filter=blob:none','--no-checkout',meta['url'],str(clone))
   if result.returncode: raise SystemExit(result.stderr)
-  tip=a.commit or run('git','rev-parse',f"origin/{meta['branch']}",cwd=clone).stdout.strip()
+  # A no-checkout clone may only have its default branch. Fetch the configured
+  # branch explicitly so an historical baseline can be archived for a dry run.
+  result=run('git','fetch','--no-tags','origin',meta['branch'],cwd=clone)
+  if result.returncode: raise SystemExit(result.stderr)
+  if a.commit:
+   result=run('git','fetch','--no-tags','origin',a.commit,cwd=clone)
+   if result.returncode: raise SystemExit('requested baseline is not fetchable from upstream: '+result.stderr)
+  tip=a.commit or run('git','rev-parse','FETCH_HEAD',cwd=clone).stdout.strip()
   staged=td/'staged'; staged.mkdir(); import tarfile, io
   raw=subprocess.run(['git','archive',tip],cwd=clone,capture_output=True,check=True).stdout
   import tarfile, io; tarfile.open(fileobj=io.BytesIO(raw)).extractall(staged)
@@ -57,8 +66,10 @@ def main():
   moved=[]
   try:
    for old,new in paths:
-    if old.exists(): old.rename(backup/old.name)
-    new.rename(old); moved.append((old,backup/old.name))
+    prior=backup/'original'/old.relative_to(ROOT); prior.parent.mkdir(parents=True,exist_ok=True)
+    if old.exists(): old.rename(prior)
+    moved.append((old,prior))
+    new.rename(old)
   except Exception:
    for old,prior in reversed(moved):
     if old.exists(): shutil.rmtree(old) if old.is_dir() else old.unlink()

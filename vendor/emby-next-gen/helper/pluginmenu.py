@@ -17,25 +17,6 @@ MappingContentKodi = {"movies": "movies", "Video": "videos", "Season": "tvshows"
 Subcontent = {"tvshows": ("Series", "Season", "Episode", "Genre", "BoxSet"), "movies": ("Movie", "Genre", "BoxSet"), "music": ("MusicArtist", "MusicAlbum", "MusicGenre", "BoxSet", "Audio"), "musicvideos": ("MusicArtist", "MusicGenre", "BoxSet"), "homevideos": ("Photo", "PhotoAlbum", "Video"), "videos": ("Series", "Season", "Episode", "Genre", "BoxSet", "Movie", "Video", "Person"), "playablevideos": ("MusicVideo", "Episode", "Movie", "Video"), "PlaylistsAudio": ("Audio",), "PlaylistsVideo": ("All",), "Playlists": ("Audio", "MusicVideo", "Episode", "Movie", "Video"), "photos": ("PhotoAlbum", "Photo"), "PhotoAlbum": ("Photo", "PhotoAlbum", "Video", "Folder")}
 IconMapping = {"MusicArtist": "DefaultMusicArtists.png", "MusicAlbum": "DefaultMusicAlbums.png", "Audio": "DefaultMusicSongs.png", "Movie": "DefaultMovies.png", "Trailer": "DefaultAddonVideo.png", "BoxSet": "DefaultSets.png", "Series": "DefaultTVShows.png", "Season": "DefaultTVShowTitle.png", "Episode": "DefaultAddonVideo.png", "MusicVideo": "DefaultMusicVideos.png", "Video": "DefaultAddonVideo.png", "Photo": "DefaultPicture.png", "PhotoAlbum": "DefaultAddonPicture.png", "TvChannel": "DefaultAddonPVRClient.png", "Folder": "DefaultFolder.png", "Playlist": "DefaultPlaylist.png", "Genre": "DefaultGenre.png", "MusicGenre": "DefaultMusicGenres.png", "Person": "DefaultActor.png", "Tag": "DefaultTags.png", "Channel": "DefaultFolder.png", "CollectionFolder": "DefaultFolder.png", "Studio": "DefaultStudios.png"}
 LibraryMenu = {"LibraryAdd": utils.Translate(33154), "LibraryRemove": utils.Translate(33184), "LibraryUpdate": utils.Translate(33139), "LibraryRepair": utils.Translate(33140), "RefreshBoxsets": utils.Translate(33098), "RefreshMusicvideoLinks": utils.Translate(33749), "ToggleLiveTv": "", "RefreshLiveTv": utils.Translate(33706)}
-DynamicPageQueries = ("Letter", "Playlist", "Playlists", "PlaylistsAudio", "PlaylistsVideo", "Video", "Trailer", "All", "BoxSet", "Season", "Episode", "Series", "Photo", "HomeVideos", "PhotoAlbum", "MusicVideo", "VideoMusicArtist", "MusicArtist", "MusicGenre", "Genre", "Person", "Tag", "Movie", "Audio", "MusicAlbum", "Search", "Folder", "Favorite", "Inprogress", "Resume")
-
-def _dynamic_page_path(Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported, StartIndex, PageSize):
-    Params = {'id': Id, 'mode': 'browse', 'query': query, 'server': ServerId, 'parentid': ParentId, 'content': Content, 'libraryid': LibraryId, 'contentsupported': ContentSupported, 'startindex': StartIndex, 'pagesize': PageSize}
-    return f"plugin://plugin.service.emby-next-gen/?{urlencode(Params)}"
-
-def _dynamic_page_context(StartIndex, PageSize):
-    try:
-        StartIndex = max(0, int(StartIndex or 0))
-    except (TypeError, ValueError):
-        StartIndex = 0
-
-    try:
-        PageSize = int(PageSize or utils.DynamicPageSize)
-    except (TypeError, ValueError):
-        PageSize = utils.DynamicPageSize
-
-    PageSize = max(25, min(PageSize, 250))
-    return StartIndex, PageSize
 
 # Build plugin menu
 def listing(Handle, ContentSupported):
@@ -63,7 +44,7 @@ def listing(Handle, ContentSupported):
     xbmcplugin.endOfDirectory(Handle, cacheToDisc=False, updateListing=False)
 
 # Browse dynamically content
-def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported, StartIndex=0, PageSize=None):
+def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported):
     Handle = int(Handle)
 
     if not xbmcplugin.addDirectoryItems(Handle, (), 0):
@@ -75,16 +56,7 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
     ItemsListings = []
     utils.close_busyDialog()
 
-    DynamicPage = query in DynamicPageQueries
-    PageHasNext = False
-
-    if DynamicPage:
-        PageStartIndex, PageSize = _dynamic_page_context(StartIndex, PageSize)
-        Extras = {"Limit": PageSize + 1, "DynamicStartIndex": PageStartIndex}
-        SearchContext = SearchTerm if query == "Search" else ""
-        CacheId = f"{Id}{query}{ParentId}{ServerId}{LibraryId}P{PageStartIndex}S{PageSize}{SearchContext}"
-        if utils.DebugLog: xbmc.log(f"EMBY.helper.pluginmenu (DEBUG): Dynamic page start/size: {PageStartIndex}/{PageSize}", 1) # LOGDEBUG
-    elif WindowId not in (10502, 10025, 10002, 10035):
+    if WindowId not in (10502, 10025, 10002, 10035):
         Extras = {"Limit": utils.maxnodeitems}
         CacheId = f"{Id}{query}{ParentId}{ServerId}{LibraryId}{utils.maxnodeitems}"
     else:
@@ -122,7 +94,7 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
     CachedItem = cache.QueryCache.get(ContentRequest, {}).get(CacheId)
 
     if CachedItem:
-        if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, CachedItem['node_id'], CachedItem['query'], CachedItem['server_id'], CachedItem['parent_id'], CachedItem['library_id'], ContentSupported, PageStartIndex if DynamicPage else 0, PageSize if DynamicPage else None):
+        if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, CachedItem['node_id'], CachedItem['query'], CachedItem['server_id'], CachedItem['parent_id'], CachedItem['library_id'], ContentSupported):
             return
 
         add_ViewItems(Handle, query, CachedItem['content'], CachedItem['listings'], CachedItem['unsorted'])
@@ -272,8 +244,7 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
 
         RequestParams = (ParentId, ("MusicVideo",), True, Extras, False, LibraryId)
     elif query in ('VideoMusicArtist', 'MusicArtist'):
-        Extras.update({"SortBy": "SortName"})
-        RequestParams = (ParentId, ("MusicArtist",), True, Extras, False, LibraryId)
+        RequestParams = (ParentId, ("MusicArtist",), True, {"SortBy": "SortName"}, False, LibraryId)
     elif query == 'MusicGenre':
         if ParentId == Id:
             Extras.update({"SortBy": "SortName"})
@@ -337,16 +308,8 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
         RequestParams = (ParentId, ("Person", "Genre", "MusicGenre", "Movie", "Video", "Series", "Episode", "MusicVideo", "MusicArtist", "MusicAlbum", "Audio"), True, Extras, False, LibraryId)
 
     if RequestParams:
-        if DynamicPage:
-            PageItems = list(utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams))
-            PageHasNext = len(PageItems) > PageSize
-            PageItems = PageItems[:PageSize]
-            ItemsIterator = iter(PageItems)
-        else:
-            ItemsIterator = utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams)
-
         if Content == "PlaylistsVideo" and RequestParams[1] != ("Playlist",):
-            for Item in ItemsIterator:
+            for Item in utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams):
                 if Item['Type'] in ("MusicVideo", "Episode", "Movie", "Video"):
                     ItemsListings = load_ListItem(ParentId, Item, ServerId, ItemsListings, Item['Type'], LibraryId, ContentSupported, ContentRequest)
         else:
@@ -354,39 +317,28 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
             SortItems = {"MusicArtist": (), "MusicAlbum": (), "Audio": (), "Movie": (), "Trailer": (), "BoxSet": (), "Series": (), "Season": (), "Episode": (), "MusicVideo": (), "Video": (), "Photo": (), "PhotoAlbum": (), "TvChannel": (), "Folder": (), "Playlist": (), "Genre": (), "MusicGenre": (), "Person": (), "Tag": (), "Channel": (), "CollectionFolder": (), "Studio": ()}
 
             if query == "Playlist":
-                for Index, Item in enumerate(ItemsIterator, 1):
+                for Index, Item in enumerate(utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams), 1):
                     Item['IndexNumber'] = Index
                     add_unifyedItem(Item, Doublesfilter, SortItems)
             else:
-                for Item in ItemsIterator:
+                for Item in utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams):
                     add_unifyedItem(Item, Doublesfilter, SortItems)
 
             Content, ItemsListings, WindowIdCheck = unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId, Unsorted, Id, WindowIdCheck, ContentSupported, ContentRequest)
-
-    if DynamicPage:
-        PageParentId = ParentId
-        PageContent = ContentRequest
-
-        if PageStartIndex > 0:
-            ItemsListings = add_ListItem(ItemsListings, "上一页", _dynamic_page_path(Id, query, PageParentId, PageContent, ServerId, LibraryId, ContentSupported, max(0, PageStartIndex - PageSize), PageSize), "DefaultFolder.png", "")
-
-        if PageHasNext:
-            ItemsListings = add_ListItem(ItemsListings, "下一页", _dynamic_page_path(Id, query, PageParentId, PageContent, ServerId, LibraryId, ContentSupported, PageStartIndex + PageSize, PageSize), "DefaultFolder.png", "")
-
     # Write cache
     if ContentRequest not in cache.QueryCache:
         cache.QueryCache[ContentRequest] = {}
 
-    cache.QueryCache[ContentRequest][CacheId] = {'listings': ItemsListings, 'unsorted': Unsorted, 'node_id': Id, 'query': query, 'server_id': ServerId, 'parent_id': ParentId, 'library_id': LibraryId, 'content': Content, 'page_start': PageStartIndex if DynamicPage else 0, 'page_size': PageSize if DynamicPage else 0, 'page_has_next': PageHasNext}
+    cache.QueryCache[ContentRequest][CacheId] = {'listings': ItemsListings, 'unsorted': Unsorted, 'node_id': Id, 'query': query, 'server_id': ServerId, 'parent_id': ParentId, 'library_id': LibraryId, 'content': Content}
 
-    if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported, PageStartIndex if DynamicPage else 0, PageSize if DynamicPage else None):
+    if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported):
         return
 
     add_ViewItems(Handle, query, Content, ItemsListings, Unsorted)
 
 # Workaround for invalid window query
 # check if video or music navigation window is open (MyVideoNav.xml MyMusicNav.xml) -> open MyPics.xml etc 10502 = music, 10025 = videos, 10002 = pictures
-def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported, StartIndex=0, PageSize=None):
+def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported):
     ReloadWindowId = ""
 
     if ContentRequest == "Photo" and WindowId in (10502, 10025):
@@ -403,12 +355,7 @@ def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentI
         xbmc.log(f"EMBY.helper.pluginmenu: Change of (browse) node content. Reload window: {ContentRequest} / {WindowId} / {ReloadWindowId}", 1) # LOGINFO
         xbmcplugin.endOfDirectory(Handle, succeeded=True, cacheToDisc=False, updateListing=False)
         xbmc.executebuiltin('Action(back)')
-        Params = {'id': Id, 'mode': 'browse', 'query': query, 'server': ServerId, 'parentid': ParentId, 'content': ContentRequest, 'libraryid': LibraryId, 'contentsupported': ContentSupported}
-
-        if PageSize:
-            Params.update({'startindex': StartIndex, 'pagesize': PageSize})
-
-        utils.start_thread(utils.ActivateWindow, (ReloadWindowId, f"plugin://plugin.service.emby-next-gen/?{urlencode(Params)}"))
+        utils.start_thread(utils.ActivateWindow, (ReloadWindowId, f"plugin://plugin.service.emby-next-gen/?id={Id}&mode=browse&query={query}&server={ServerId}&parentid={ParentId}&content={ContentRequest}&libraryid={LibraryId}&contentsupported={ContentSupported}"))
         return True
 
     return False
@@ -548,7 +495,6 @@ def add_ListItem(ItemsListings, label, path, artwork, HelpText):
     ListItem = xbmcgui.ListItem(label, HelpText, path, True)
     ListItem.setContentLookup(False)
     ListItem.setProperties({'IsFolder': 'true', 'IsPlayable': 'false'})
-    artwork = utils.add_image_user_agent(artwork)
     ListItem.setArt({"thumb": artwork, "fanart": "special://home/addons/plugin.service.emby-next-gen/resources/fanart.jpg", "landscape": artwork or "special://home/addons/plugin.service.emby-next-gen/resources/fanart.jpg", "clearlogo": "special://home/addons/plugin.service.emby-next-gen/resources/clearlogo.png", "icon": artwork})
 
     if HelpText == "Photo":

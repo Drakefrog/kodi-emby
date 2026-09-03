@@ -171,10 +171,6 @@ class API:
                 if Fields and Fields != ("Path",): # Query additional data
                     ExtraMod = Extra.copy()
                     ExtraMod.pop("IsFavorite", None)
-                    # These belong to the list page, not the follow-up lookup by IDs.
-                    ExtraMod.pop("StartIndex", None)
-                    ExtraMod.pop("DynamicStartIndex", None)
-                    ExtraMod.pop("Limit", None)
                     yield from self.get_Items_Ids(list(dict(ItemData).keys()), [Type], True, False, False, "", ExtraMod, None, True)
                 else:  # no extended information required
                     for Item in ItemData:
@@ -182,56 +178,29 @@ class API:
 
     def get_Items_Ids(self, Ids, MediaTypes, Dynamic, Basic, ProcessProgressId, LibraryId, Extra, BusyFunction, UserData):
         ItemsQueue = queue.Queue()
-        Ids = list(Ids)
 
         for MediaType in MediaTypes:
             if not Ids: # Ids are removed in async_get_Items_Ids thread
                 return
 
-            IdChunks = self._split_ids_for_request(Ids) if Dynamic else (Ids,)
+            utils.start_thread(self.async_get_Items_Ids, (ItemsQueue, Ids.copy(), Dynamic, Basic, ProcessProgressId, LibraryId, MediaType, Extra, BusyFunction, UserData))
 
-            for IdChunk in IdChunks:
-                utils.start_thread(self.async_get_Items_Ids, (ItemsQueue, IdChunk.copy(), Dynamic, Basic, ProcessProgressId, LibraryId, MediaType, Extra, BusyFunction, UserData))
+            while True:
+                Items = ItemsQueue.getall()
 
-                while True:
-                    Items = ItemsQueue.getall()
+                if utils.SystemShutdown:
+                    return
 
-                    if utils.SystemShutdown:
-                        return
+                if not Items:
+                    break
 
-                    if not Items:
-                        break
-
-                    if Items[-1] == "QUIT":
-                        yield from Items[:-1]
-                        del Items
-                        break
-
-                    yield from Items
+                if Items[-1] == "QUIT":
+                    yield from Items[:-1]
                     del Items
+                    break
 
-    @staticmethod
-    def _split_ids_for_request(Ids):
-        """Split Dynamic ID lookups before the HTTP URI fallback is needed."""
-        MaxLength = max(256, utils.MaxURILength - 64)
-        Chunk = []
-        ChunkLength = 0
-
-        for ItemId in Ids:
-            ItemId = str(ItemId)
-            ItemLength = len(ItemId) + (1 if Chunk else 0)
-
-            if Chunk and ChunkLength + ItemLength >= MaxLength:
-                yield Chunk
-                Chunk = []
-                ChunkLength = 0
-                ItemLength = len(ItemId)
-
-            Chunk.append(ItemId)
-            ChunkLength += ItemLength
-
-        if Chunk:
-            yield Chunk
+                yield from Items
+                del Items
 
     def async_get_Items_Ids(self, ItemsQueue, Ids, Dynamic, Basic, ProcessProgressId, LibraryId, MediaType, Extra, BusyFunction, UserData):
         if utils.DebugLog: xbmc.log("EMBY.emby.api (DEBUG): THREAD: --->[ load Item by Ids ]", 1) # LOGDEBUG
@@ -500,8 +469,7 @@ class API:
 
     def async_get_Items(self, Request, ItemsQueue, Params, ProcessProgressId, CustomLimit, BusyFunction):
         if utils.DebugLog: xbmc.log("EMBY.emby.api (DEBUG): THREAD: --->[ load Items ]", 1) # LOGDEBUG
-        # Dynamic pages use a private offset so Sync's existing StartIndex behavior is untouched.
-        Index = int(Params.pop('DynamicStartIndex', 0) or 0)
+        Index = 0
         ItemCounter = 0
         Limit = Params['Limit']
 
@@ -550,12 +518,12 @@ class API:
 
             if ReceivedItems < Limit:
                 ItemsQueue.put("QUIT")
-                if utils.DebugLog: xbmc.log(f"EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] StartIndex: {Index} / Limit: {Limit} / ReceivedItems: {ReceivedItems}", 1) # LOGDEBUG
+                if utils.DebugLog: xbmc.log(f"EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] Limit: {Limit} / ReceivedItems: {ReceivedItems}", 1) # LOGDEBUG
                 return
 
             if CustomLimit:
                 ItemsQueue.put("QUIT")
-                if utils.DebugLog: xbmc.log(f"EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] (custom limit reached) StartIndex: {Index} / Limit: {Limit}", 1) # LOGDEBUG
+                if utils.DebugLog: xbmc.log("EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] (limit reached)", 1) # LOGDEBUG
                 return
 
             if not self.async_throttle_queries(Index, ProcessProgressId):

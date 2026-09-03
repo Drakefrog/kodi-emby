@@ -196,7 +196,7 @@ class HTTP:
                 else:
                     ConnectionMode = 'keep-alive'
 
-                self.Connection[ConnectionId]["RequestHeader"] = {"Host": f"{self.Connection[ConnectionId]['Hostname']}:{self.Connection[ConnectionId]['Port']}", 'Content-Type': 'application/json; charset=utf-8', 'Accept-Charset': 'utf-8', 'Accept-Encoding': 'gzip,deflate', 'User-Agent': utils.ClientUserAgent, 'Connection': ConnectionMode, 'Authorization': f'Emby Client="{utils.ClientName}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.ClientVersion}"'}
+                self.Connection[ConnectionId]["RequestHeader"] = {"Host": f"{self.Connection[ConnectionId]['Hostname']}:{self.Connection[ConnectionId]['Port']}", 'Content-Type': 'application/json; charset=utf-8', 'Accept-Charset': 'utf-8', 'Accept-Encoding': 'gzip,deflate', 'User-Agent': f"{utils.addon_name}/{utils.addon_version}", 'Connection': ConnectionMode, 'Authorization': f'Emby Client="{utils.addon_name}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.addon_version}"'}
 
                 if ConnectionId == "DOWNLOAD":
                     self.Connection[ConnectionId]["RequestHeader"]['Accept-Encoding'] = "identity"
@@ -375,7 +375,7 @@ class HTTP:
             elif ConnectionId in ("MAIN", "MAINFALLBACK", "ASYNC"): # send final ping to change tcp session from keep-alive to close
                 try:
                     self.Connection[ConnectionId]["Socket"].settimeout(1) # set timeout
-                    self.Connection[ConnectionId]["Socket"].send(f'POST {self.Connection[ConnectionId]["SubUrl"]}System/Ping HTTP/1.1\r\nHost: {self.Connection[ConnectionId]["Hostname"]}:{self.Connection[ConnectionId]["Port"]}\r\nContent-Type: application/json; charset=utf-8\r\nAccept-Charset: utf-8\r\nAccept-Encoding: gzip,deflate\r\nUser-Agent: {utils.ClientUserAgent}\r\nConnection: close\r\nAuthorization: Emby Client="{utils.ClientName}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.ClientVersion}"\r\nContent-Length: 0\r\n\r\n'.encode("utf-8"))
+                    self.Connection[ConnectionId]["Socket"].send(f'POST {self.Connection[ConnectionId]["SubUrl"]}System/Ping HTTP/1.1\r\nHost: {self.Connection[ConnectionId]["Hostname"]}:{self.Connection[ConnectionId]["Port"]}\r\nContent-Type: application/json; charset=utf-8\r\nAccept-Charset: utf-8\r\nAccept-Encoding: gzip,deflate\r\nUser-Agent: {utils.addon_name}/{utils.addon_version}\r\nConnection: close\r\nAuthorization: Emby Client="{utils.addon_name}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.addon_version}"\r\nContent-Length: 0\r\n\r\n'.encode("utf-8"))
                 except Exception as error:
                     xbmc.log(f"EMBY.emby.http: Socket {ConnectionId} send close error 2: {error}", 2) # LOGWARNING
 

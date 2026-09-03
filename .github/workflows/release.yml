@@ -13,9 +13,10 @@ jobs:
     environment: {name: github-pages, url: ${{ steps.deploy.outputs.page_url }}}
     steps:
       - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
       - uses: actions/setup-python@v5
         with: {python-version: '3.11'}
-      - run: make build test
+      - run: python3 tools/restore_previous_release.py && make build test
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: {path: dist}

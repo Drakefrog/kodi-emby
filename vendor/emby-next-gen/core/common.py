@@ -193,13 +193,13 @@ def set_path_filename(Item, ServerId, MediaSource, isDynamic=False):
     if Item['Type'] in ('Photo', 'PhotoAlbum'):
         if 'Primary' in Item['ImageTags']:
             if 'Path' in Item:
-                Item['KodiFullPath'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}--{quote(utils.get_Filename(Item['Path'], ''))}")
+                Item['KodiFullPath'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}--{quote(utils.get_Filename(Item['Path'], ''))}"
                 return
 
-            Item['KodiFullPath'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}")
+            Item['KodiFullPath'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}"
             return
 
-        Item['KodiFullPath'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-0")
+        Item['KodiFullPath'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-0"
         return
 
     if isDynamic:
@@ -742,7 +742,7 @@ def set_common(Item, ServerId, DynamicNode, IncrementalSync):
                         Item['Cast'].append(People['Name'])
 
                     if 'PrimaryImageTag' in People:
-                        People['imageurl'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{People['Id']}-0-p-{People['PrimaryImageTag']}")
+                        People['imageurl'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{People['Id']}-0-p-{People['PrimaryImageTag']}"
                     else:
                         People['imageurl'] = ""
                 else:
@@ -756,7 +756,7 @@ def set_common(Item, ServerId, DynamicNode, IncrementalSync):
         if "ArtistItems" in Item:
             for ArtistItem in Item['ArtistItems']:
                 if 'PrimaryImageTag' in ArtistItem:
-                    ArtistItem['imageurl'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{ArtistItem['Id']}-0-p-{ArtistItem['PrimaryImageTag']}")
+                    ArtistItem['imageurl'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{ArtistItem['Id']}-0-p-{ArtistItem['PrimaryImageTag']}"
                 else:
                     ArtistItem['imageurl'] = ""
     elif IncrementalSync and utils.ArtworkCacheIncremental:
@@ -828,9 +828,9 @@ def load_chapter(MediaSource, Chapter, Index, ServerId, ItemId):
         MarkerLabel = quote(MarkerTypeMapping[Chapter['MarkerType']])
 
         if "ImageTag" in Chapter:
-            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{MarkerLabel}")
+            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{MarkerLabel}"
         else: # inject blank image, otherwise not possible to use text overlay (webservice.py)
-            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{MarkerLabel}")
+            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{MarkerLabel}"
     else:
         if "Name" in Chapter:
             Chapter['Name'] = Chapter['Name'].replace("-", " ")
@@ -850,9 +850,9 @@ def load_chapter(MediaSource, Chapter, Index, ServerId, ItemId):
             Chapter["Name"] = "unknown"
 
         if "ImageTag" in Chapter:
-            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{quote(Chapter['Name'])}")
+            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{quote(Chapter['Name'])}"
         else:
-            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{quote(Chapter['Name'])}")
+            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{quote(Chapter['Name'])}"
 
     if Chapter["StartPositionTicks"] not in MediaSource['KodiChapters']:
         MediaSource['KodiChapters'][Chapter["StartPositionTicks"]] = ChapterImage
@@ -881,7 +881,6 @@ def set_KodiArtwork(Item, ServerId, DynamicNode):
         if Item["AlbumPrimaryImageTag"] and "AlbumId" in Item:
             Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['AlbumId']}-0-p-{Item['AlbumPrimaryImageTag']}"
 
-        Item['KodiArtwork'] = utils.add_image_user_agent_to_artwork(Item['KodiArtwork'])
         return
 
     if Item['Type'] in ImageTagsMappings:
@@ -980,8 +979,6 @@ def set_KodiArtwork(Item, ServerId, DynamicNode):
         for KodiArtworkKey, KodiArtwork in list(Item['KodiArtwork'].items()):
             if KodiArtwork and KodiArtworkKey != "fanart":
                 Item['KodiArtwork'][KodiArtworkKey] = f"{KodiArtwork}-{quote(Item['Name'])}"
-
-    Item['KodiArtwork'] = utils.add_image_user_agent_to_artwork(Item['KodiArtwork'])
 
 def cache_artwork(KodiArtworks):
     Artworks = ()
@@ -1434,24 +1431,23 @@ def set_Favorites_Artwork(Item, ServerId):
     if 'KodiArtwork' not in Item:
         Item['KodiArtwork'] = {}
 
-    Item['KodiArtwork']['favourite'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-noimage")
+    Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-noimage"
 
     if 'ImageTags' in Item and Item['ImageTags']:
         ItemId = Item['Id'].replace(utils.MappingIds['Tag'], '')
 
         if "Primary" in Item['ImageTags']:
-            Item['KodiArtwork']['favourite'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Primary']}")
+            Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Primary']}"
         elif "Thumb" in Item['ImageTags']:
-            Item['KodiArtwork']['favourite'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Thumb']}")
+            Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Thumb']}"
 
 def set_Favorites_Artwork_Overlay(Label, Content, EmbyItemId, ServerId, ImageUrl):
     OverlayText = quote(f"{Label}\n({Content})")
 
     if ImageUrl:
-        ImageUrl = utils.get_image_path_without_options(ImageUrl)
-        return utils.add_image_user_agent(f"{ImageUrl}-{OverlayText}")
+        return f"{ImageUrl}-{OverlayText}"
 
-    return utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{EmbyItemId}-0-p-noimage-{OverlayText}")
+    return f"http://127.0.0.1:57342/picture/{ServerId}/p-{EmbyItemId}-0-p-noimage-{OverlayText}"
 
 def validate_FavoriteImage(Item):
     if 'KodiArtwork' not in Item:
@@ -1469,7 +1465,7 @@ def update_downloaded_info(Item, SQLs, KodiType):
 
         for KodiArtworkId, KodiArtworkUrl in list(Item['KodiArtwork'].items()):
             if KodiArtworkId in ("poster", "thumb", "landscape") and KodiArtworkUrl:
-                KodiArtworkUrlMod = utils.add_image_path_suffix(KodiArtworkUrl.replace('-download', ''), "-download")
+                KodiArtworkUrlMod = f"{KodiArtworkUrl.replace('-download', '')}-download"
                 Item['KodiArtwork'][KodiArtworkId] = KodiArtworkUrlMod
 
         Item['KodiPath'] = os.path.join(utils.DownloadPath, "EMBY-offline-content", KodiType, "")

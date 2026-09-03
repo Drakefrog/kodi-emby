@@ -1,5 +1,5 @@
 {
-  "emby-next-gen": {"url": "https://github.com/MediaBrowser/plugin.video.emby.git", "branch": "next-gen-dev-python3", "upstream_commit": "ae994cd9c2a240411e4b96f9c26fea51c8d166a4", "vendor": "vendor/emby-next-gen", "source": "sources/emby-next-gen", "patches": "patches/emby-next-gen", "patch_strip": 3},
+  "emby-next-gen": {"url": "https://github.com/MediaBrowser/plugin.video.emby.git", "branch": "next-gen-dev-python3", "upstream_commit": "4051767ec4fde5075b07cac7cdfab7e1061d9d89", "vendor": "vendor/emby-next-gen", "source": "sources/emby-next-gen", "patches": "patches/emby-next-gen", "patch_strip": 3},
   "embycon": {"url": "https://github.com/faush01/plugin.video.embycon.git", "branch": "master", "upstream_commit": "a56033d7e22ecb0d72e432ac5e20cf38d40f4a83", "vendor": "vendor/embycon/plugin.video.embycon", "source": "sources/embycon/plugin.video.embycon", "patches": "patches/embycon", "upstream_subdir": "plugin.video.embycon", "patch_strip": 4},
   "arctic-fuse-3": {"url": "https://github.com/jurialmunkey/skin.arctic.fuse.3.git", "branch": "omega", "upstream_commit": "1602291d5b7e3d6e8b5d583c8fbdd110d563fba7", "vendor": "vendor/arctic-fuse-3", "source": "sources/arctic-fuse-3", "patches": "patches/arctic-fuse-3", "patch_strip": 3}
 }

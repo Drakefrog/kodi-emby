@@ -460,7 +460,7 @@ def worker_Query(WorkerNumber):  # thread by caller
                         continue
 
                 if query:
-                    pluginmenu.browse(Handle, params.get('id'), query, params.get('parentid'), params.get('content'), ServerId, params.get('libraryid'), params.get('contentsupported', ""), params.get('startindex', 0), params.get('pagesize'))
+                    pluginmenu.browse(Handle, params.get('id'), query, params.get('parentid'), params.get('content'), ServerId, params.get('libraryid'), params.get('contentsupported', ""))
             elif mode == 'playlist':
                 pluginmenu.get_playlist(Handle, ServerId, params['mediatype'], params.get('id', ""))
             elif mode == 'nextepisodes':

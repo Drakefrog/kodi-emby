@@ -32,9 +32,8 @@ def CacheAllEntries(urls, WorkerName):
         if not url[0]:
             continue
 
-        ArtworkUrl = utils.get_image_path_without_options(url[0])
-        Folder = ArtworkUrl.split("/")
-        Data = ArtworkUrl[ArtworkUrl.rfind("/") + 1:].split("-")
+        Folder = url[0].split("/")
+        Data = url[0][url[0].rfind("/") + 1:].split("-")
 
         if len(Data) < 4 or len(Folder) < 5:
             xbmc.log(f"EMBY.helper.pluginmenu: Artwork cache: Invalid item found {url}", 2) # LOGWARNING

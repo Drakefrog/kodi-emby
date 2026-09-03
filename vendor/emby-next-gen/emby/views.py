@@ -440,7 +440,7 @@ class Views:
                 library['ContentType'] = library.get('CollectionType', "mixed")
 
             if "Primary" in library["ImageTags"]:
-                IconPath = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{self.EmbyServer.ServerData['ServerId']}/p-{library['Id']}-0-p-{library['ImageTags']['Primary']}")
+                IconPath = f"http://127.0.0.1:57342/picture/{self.EmbyServer.ServerData['ServerId']}/p-{library['Id']}-0-p-{library['ImageTags']['Primary']}"
 
             self.ViewItems[library['Id']] = [utils.decode_XML(library['Name']), library['ContentType'], IconPath]
 

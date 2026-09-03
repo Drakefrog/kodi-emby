@@ -16,7 +16,7 @@ jobs:
         env: {GH_TOKEN: ${{ github.token }}}
         run: |
           if grep -q '→' UPSTREAM_SYNC_REPORT.md; then
-            branch="automation/upstream-$(date +%Y%m%d)"
+            branch="automation/upstream-${{ github.run_id }}"
             git checkout -b "$branch"
             if grep -q 'emby-next-gen:' UPSTREAM_SYNC_REPORT.md; then make sync-emby-next-gen; fi
             if grep -q 'embycon:' UPSTREAM_SYNC_REPORT.md; then make sync-embycon; fi

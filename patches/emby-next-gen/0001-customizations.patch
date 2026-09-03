@@ -1,8 +1,289 @@
+diff --git a/vendor/emby-next-gen/.gitignore b/sources/emby-next-gen/.gitignore
+old mode 100755
+new mode 100644
+index 959fc2a..9e4227a
+--- a/vendor/emby-next-gen/.gitignore
++++ b/sources/emby-next-gen/.gitignore
+@@ -1,6 +1,9 @@
+ *.pyo
++*.pyc
++__pycache__/
+ __local__/
+ machine_guid
+ /resources/media/Thumbs.db
+ 
+ .idea/
++.DS_Store
+diff --git a/vendor/emby-next-gen/core/common.py b/sources/emby-next-gen/core/common.py
+index 2f87fd3..fc5c9d2 100644
+--- a/vendor/emby-next-gen/core/common.py
++++ b/sources/emby-next-gen/core/common.py
+@@ -193,13 +193,13 @@ def set_path_filename(Item, ServerId, MediaSource, isDynamic=False):
+     if Item['Type'] in ('Photo', 'PhotoAlbum'):
+         if 'Primary' in Item['ImageTags']:
+             if 'Path' in Item:
+-                Item['KodiFullPath'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}--{quote(utils.get_Filename(Item['Path'], ''))}"
++                Item['KodiFullPath'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}--{quote(utils.get_Filename(Item['Path'], ''))}")
+                 return
+ 
+-            Item['KodiFullPath'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}"
++            Item['KodiFullPath'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-{Item['ImageTags']['Primary']}")
+             return
+ 
+-        Item['KodiFullPath'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-0"
++        Item['KodiFullPath'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-0")
+         return
+ 
+     if isDynamic:
+@@ -742,7 +742,7 @@ def set_common(Item, ServerId, DynamicNode, IncrementalSync):
+                         Item['Cast'].append(People['Name'])
+ 
+                     if 'PrimaryImageTag' in People:
+-                        People['imageurl'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{People['Id']}-0-p-{People['PrimaryImageTag']}"
++                        People['imageurl'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{People['Id']}-0-p-{People['PrimaryImageTag']}")
+                     else:
+                         People['imageurl'] = ""
+                 else:
+@@ -756,7 +756,7 @@ def set_common(Item, ServerId, DynamicNode, IncrementalSync):
+         if "ArtistItems" in Item:
+             for ArtistItem in Item['ArtistItems']:
+                 if 'PrimaryImageTag' in ArtistItem:
+-                    ArtistItem['imageurl'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{ArtistItem['Id']}-0-p-{ArtistItem['PrimaryImageTag']}"
++                    ArtistItem['imageurl'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{ArtistItem['Id']}-0-p-{ArtistItem['PrimaryImageTag']}")
+                 else:
+                     ArtistItem['imageurl'] = ""
+     elif IncrementalSync and utils.ArtworkCacheIncremental:
+@@ -828,9 +828,9 @@ def load_chapter(MediaSource, Chapter, Index, ServerId, ItemId):
+         MarkerLabel = quote(MarkerTypeMapping[Chapter['MarkerType']])
+ 
+         if "ImageTag" in Chapter:
+-            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{MarkerLabel}"
++            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{MarkerLabel}")
+         else: # inject blank image, otherwise not possible to use text overlay (webservice.py)
+-            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{MarkerLabel}"
++            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{MarkerLabel}")
+     else:
+         if "Name" in Chapter:
+             Chapter['Name'] = Chapter['Name'].replace("-", " ")
+@@ -850,9 +850,9 @@ def load_chapter(MediaSource, Chapter, Index, ServerId, ItemId):
+             Chapter["Name"] = "unknown"
+ 
+         if "ImageTag" in Chapter:
+-            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{quote(Chapter['Name'])}"
++            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-{Chapter['ImageTag']}-{quote(Chapter['Name'])}")
+         else:
+-            ChapterImage = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{quote(Chapter['Name'])}"
++            ChapterImage = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Id}-{Index}-c-noimage-{quote(Chapter['Name'])}")
+ 
+     if Chapter["StartPositionTicks"] not in MediaSource['KodiChapters']:
+         MediaSource['KodiChapters'][Chapter["StartPositionTicks"]] = ChapterImage
+@@ -881,6 +881,7 @@ def set_KodiArtwork(Item, ServerId, DynamicNode):
+         if Item["AlbumPrimaryImageTag"] and "AlbumId" in Item:
+             Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['AlbumId']}-0-p-{Item['AlbumPrimaryImageTag']}"
+ 
++        Item['KodiArtwork'] = utils.add_image_user_agent_to_artwork(Item['KodiArtwork'])
+         return
+ 
+     if Item['Type'] in ImageTagsMappings:
+@@ -980,6 +981,8 @@ def set_KodiArtwork(Item, ServerId, DynamicNode):
+             if KodiArtwork and KodiArtworkKey != "fanart":
+                 Item['KodiArtwork'][KodiArtworkKey] = f"{KodiArtwork}-{quote(Item['Name'])}"
+ 
++    Item['KodiArtwork'] = utils.add_image_user_agent_to_artwork(Item['KodiArtwork'])
++
+ def cache_artwork(KodiArtworks):
+     Artworks = ()
+ 
+@@ -1431,23 +1434,24 @@ def set_Favorites_Artwork(Item, ServerId):
+     if 'KodiArtwork' not in Item:
+         Item['KodiArtwork'] = {}
+ 
+-    Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-noimage"
++    Item['KodiArtwork']['favourite'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{Item['Id']}-0-p-noimage")
+ 
+     if 'ImageTags' in Item and Item['ImageTags']:
+         ItemId = Item['Id'].replace(utils.MappingIds['Tag'], '')
+ 
+         if "Primary" in Item['ImageTags']:
+-            Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Primary']}"
++            Item['KodiArtwork']['favourite'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Primary']}")
+         elif "Thumb" in Item['ImageTags']:
+-            Item['KodiArtwork']['favourite'] = f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Thumb']}"
++            Item['KodiArtwork']['favourite'] = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{ItemId}-0-p-{Item['ImageTags']['Thumb']}")
+ 
+ def set_Favorites_Artwork_Overlay(Label, Content, EmbyItemId, ServerId, ImageUrl):
+     OverlayText = quote(f"{Label}\n({Content})")
+ 
+     if ImageUrl:
+-        return f"{ImageUrl}-{OverlayText}"
++        ImageUrl = utils.get_image_path_without_options(ImageUrl)
++        return utils.add_image_user_agent(f"{ImageUrl}-{OverlayText}")
+ 
+-    return f"http://127.0.0.1:57342/picture/{ServerId}/p-{EmbyItemId}-0-p-noimage-{OverlayText}"
++    return utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{ServerId}/p-{EmbyItemId}-0-p-noimage-{OverlayText}")
+ 
+ def validate_FavoriteImage(Item):
+     if 'KodiArtwork' not in Item:
+@@ -1465,7 +1469,7 @@ def update_downloaded_info(Item, SQLs, KodiType):
+ 
+         for KodiArtworkId, KodiArtworkUrl in list(Item['KodiArtwork'].items()):
+             if KodiArtworkId in ("poster", "thumb", "landscape") and KodiArtworkUrl:
+-                KodiArtworkUrlMod = f"{KodiArtworkUrl.replace('-download', '')}-download"
++                KodiArtworkUrlMod = utils.add_image_path_suffix(KodiArtworkUrl.replace('-download', ''), "-download")
+                 Item['KodiArtwork'][KodiArtworkId] = KodiArtworkUrlMod
+ 
+         Item['KodiPath'] = os.path.join(utils.DownloadPath, "EMBY-offline-content", KodiType, "")
+diff --git a/vendor/emby-next-gen/database/common_db.py b/sources/emby-next-gen/database/common_db.py
+index 0c2eb6a..343a396 100644
+--- a/vendor/emby-next-gen/database/common_db.py
++++ b/sources/emby-next-gen/database/common_db.py
+@@ -77,10 +77,10 @@ class CommonDatabase:
+         for ArtworkId, ImagePath in list(KodiArtworks.items()):
+             if ArtworkId != "fanart":
+                 if ImagePath:
+-                    SQLData += ((KodiId, KodiMediaType, ArtworkId, ImagePath),)
++                    SQLData += ((KodiId, KodiMediaType, ArtworkId, utils.add_image_user_agent(ImagePath)),)
+             else:
+                 for ArtworkFanArtId, ImageFanArtPath in list(KodiArtworks['fanart'].items()):
+-                    SQLData += ((KodiId, KodiMediaType, ArtworkFanArtId, ImageFanArtPath),)
++                    SQLData += ((KodiId, KodiMediaType, ArtworkFanArtId, utils.add_image_user_agent(ImageFanArtPath)),)
+ 
+         if SQLData:
+             self.cursor.executemany("INSERT INTO art(media_id, media_type, type, url) VALUES (?, ?, ?, ?)", SQLData)
+diff --git a/vendor/emby-next-gen/database/video_db.py b/sources/emby-next-gen/database/video_db.py
+index bf1d6cd..93aa763 100644
+--- a/vendor/emby-next-gen/database/video_db.py
++++ b/sources/emby-next-gen/database/video_db.py
+@@ -1668,13 +1668,16 @@ class VideoDatabase:
+ 
+         for ArtworkData in ArtworksData:
+             if ArtworkData[1] in ("poster", "thumb", "landscape"):
++                ArtworkPath = utils.get_image_path_without_options(ArtworkData[2])
+                 if Download:
+-                    UrlMod = f"{ArtworkData[2]}-download|redirect-limit=1000&failonerror=false"
++                    UrlMod = utils.add_image_path_suffix(ArtworkData[2].replace("-download", ""), "-download")
++                    UrlMod = f"{UrlMod}&redirect-limit=1000&failonerror=false" if "|" in UrlMod else f"{UrlMod}|redirect-limit=1000&failonerror=false"
+                 else:
+-                    UrlMod = ArtworkData[2].replace("-download|redirect-limit=1000&failonerror=false", "")
++                    ArtworkPath = ArtworkPath.replace("-download", "")
++                    UrlMod = utils.add_image_user_agent(ArtworkPath)
+ 
+                 SQLData += ((UrlMod, ArtworkData[0]),)
+-                ArtworksNoUrlParam += ((ArtworkData[2].replace("|redirect-limit=1000&failonerror=false", ""),),)
++                ArtworksNoUrlParam += ((utils.add_image_user_agent(ArtworkPath),),)
+ 
+         if SQLData:
+             self.cursor.executemany("UPDATE art SET url = ? WHERE art_id = ?", SQLData)
 diff --git a/vendor/emby-next-gen/emby/api.py b/sources/emby-next-gen/emby/api.py
-index f3275c5..9009ca0 100644
+index 9426edb..9009ca0 100644
 --- a/vendor/emby-next-gen/emby/api.py
 +++ b/sources/emby-next-gen/emby/api.py
-@@ -871,11 +871,11 @@ class API:
+@@ -171,6 +171,10 @@ class API:
+                 if Fields and Fields != ("Path",): # Query additional data
+                     ExtraMod = Extra.copy()
+                     ExtraMod.pop("IsFavorite", None)
++                    # These belong to the list page, not the follow-up lookup by IDs.
++                    ExtraMod.pop("StartIndex", None)
++                    ExtraMod.pop("DynamicStartIndex", None)
++                    ExtraMod.pop("Limit", None)
+                     yield from self.get_Items_Ids(list(dict(ItemData).keys()), [Type], True, False, False, "", ExtraMod, None, True)
+                 else:  # no extended information required
+                     for Item in ItemData:
+@@ -178,29 +182,56 @@ class API:
+ 
+     def get_Items_Ids(self, Ids, MediaTypes, Dynamic, Basic, ProcessProgressId, LibraryId, Extra, BusyFunction, UserData):
+         ItemsQueue = queue.Queue()
++        Ids = list(Ids)
+ 
+         for MediaType in MediaTypes:
+             if not Ids: # Ids are removed in async_get_Items_Ids thread
+                 return
+ 
+-            utils.start_thread(self.async_get_Items_Ids, (ItemsQueue, Ids.copy(), Dynamic, Basic, ProcessProgressId, LibraryId, MediaType, Extra, BusyFunction, UserData))
++            IdChunks = self._split_ids_for_request(Ids) if Dynamic else (Ids,)
+ 
+-            while True:
+-                Items = ItemsQueue.getall()
++            for IdChunk in IdChunks:
++                utils.start_thread(self.async_get_Items_Ids, (ItemsQueue, IdChunk.copy(), Dynamic, Basic, ProcessProgressId, LibraryId, MediaType, Extra, BusyFunction, UserData))
+ 
+-                if utils.SystemShutdown:
+-                    return
++                while True:
++                    Items = ItemsQueue.getall()
+ 
+-                if not Items:
+-                    break
++                    if utils.SystemShutdown:
++                        return
++
++                    if not Items:
++                        break
+ 
+-                if Items[-1] == "QUIT":
+-                    yield from Items[:-1]
++                    if Items[-1] == "QUIT":
++                        yield from Items[:-1]
++                        del Items
++                        break
++
++                    yield from Items
+                     del Items
+-                    break
+ 
+-                yield from Items
+-                del Items
++    @staticmethod
++    def _split_ids_for_request(Ids):
++        """Split Dynamic ID lookups before the HTTP URI fallback is needed."""
++        MaxLength = max(256, utils.MaxURILength - 64)
++        Chunk = []
++        ChunkLength = 0
++
++        for ItemId in Ids:
++            ItemId = str(ItemId)
++            ItemLength = len(ItemId) + (1 if Chunk else 0)
++
++            if Chunk and ChunkLength + ItemLength >= MaxLength:
++                yield Chunk
++                Chunk = []
++                ChunkLength = 0
++                ItemLength = len(ItemId)
++
++            Chunk.append(ItemId)
++            ChunkLength += ItemLength
++
++        if Chunk:
++            yield Chunk
+ 
+     def async_get_Items_Ids(self, ItemsQueue, Ids, Dynamic, Basic, ProcessProgressId, LibraryId, MediaType, Extra, BusyFunction, UserData):
+         if utils.DebugLog: xbmc.log("EMBY.emby.api (DEBUG): THREAD: --->[ load Item by Ids ]", 1) # LOGDEBUG
+@@ -469,7 +500,8 @@ class API:
+ 
+     def async_get_Items(self, Request, ItemsQueue, Params, ProcessProgressId, CustomLimit, BusyFunction):
+         if utils.DebugLog: xbmc.log("EMBY.emby.api (DEBUG): THREAD: --->[ load Items ]", 1) # LOGDEBUG
+-        Index = 0
++        # Dynamic pages use a private offset so Sync's existing StartIndex behavior is untouched.
++        Index = int(Params.pop('DynamicStartIndex', 0) or 0)
+         ItemCounter = 0
+         Limit = Params['Limit']
+ 
+@@ -518,12 +550,12 @@ class API:
+ 
+             if ReceivedItems < Limit:
+                 ItemsQueue.put("QUIT")
+-                if utils.DebugLog: xbmc.log(f"EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] Limit: {Limit} / ReceivedItems: {ReceivedItems}", 1) # LOGDEBUG
++                if utils.DebugLog: xbmc.log(f"EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] StartIndex: {Index} / Limit: {Limit} / ReceivedItems: {ReceivedItems}", 1) # LOGDEBUG
+                 return
+ 
+             if CustomLimit:
+                 ItemsQueue.put("QUIT")
+-                if utils.DebugLog: xbmc.log("EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] (limit reached)", 1) # LOGDEBUG
++                if utils.DebugLog: xbmc.log(f"EMBY.emby.api (DEBUG): THREAD: ---<[ load Items ] (custom limit reached) StartIndex: {Index} / Limit: {Limit}", 1) # LOGDEBUG
+                 return
+ 
+             if not self.async_throttle_queries(Index, ProcessProgressId):
+@@ -839,11 +871,11 @@ class API:
          return Payload
  
      def get_embyconnect_authenticate(self, Username, Password):
@@ -17,7 +298,7 @@ index f3275c5..9009ca0 100644
  
      def get_m3u8(self, Path, EmbyId):
 diff --git a/vendor/emby-next-gen/emby/http.py b/sources/emby-next-gen/emby/http.py
-index e3c7dfe..0c12f03 100644
+index 3fb5405..0c12f03 100644
 --- a/vendor/emby-next-gen/emby/http.py
 +++ b/sources/emby-next-gen/emby/http.py
 @@ -8,6 +8,7 @@ import zlib
@@ -32,7 +313,7 @@ index e3c7dfe..0c12f03 100644
                  else:
                      ConnectionMode = 'keep-alive'
  
--                self.Connection[ConnectionId]["RequestHeader"] = {"Host": f"{self.Connection[ConnectionId]['Hostname']}:{self.Connection[ConnectionId]['Port']}", 'Content-Type': 'application/json; charset=utf-8', 'Accept-Charset': 'utf-8', 'Accept-Encoding': 'gzip,deflate', 'User-Agent': utils.ClientUserAgent, 'Connection': ConnectionMode, 'Authorization': f'Emby Client="{utils.ClientName}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.ClientVersion}"'}
+-                self.Connection[ConnectionId]["RequestHeader"] = {"Host": f"{self.Connection[ConnectionId]['Hostname']}:{self.Connection[ConnectionId]['Port']}", 'Content-Type': 'application/json; charset=utf-8', 'Accept-Charset': 'utf-8', 'Accept-Encoding': 'gzip,deflate', 'User-Agent': f"{utils.addon_name}/{utils.addon_version}", 'Connection': ConnectionMode, 'Authorization': f'Emby Client="{utils.addon_name}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.addon_version}"'}
 +                DeviceId = self.EmbyServer.ServerData["DeviceId"]
 +                UserId = self.EmbyServer.ServerData["UserId"]
 +                AccessToken = self.EmbyServer.ServerData["AccessToken"]
@@ -44,7 +325,7 @@ index e3c7dfe..0c12f03 100644
              elif ConnectionId in ("MAIN", "MAINFALLBACK", "ASYNC"): # send final ping to change tcp session from keep-alive to close
                  try:
                      self.Connection[ConnectionId]["Socket"].settimeout(1) # set timeout
--                    self.Connection[ConnectionId]["Socket"].send(f'POST {self.Connection[ConnectionId]["SubUrl"]}System/Ping HTTP/1.1\r\nHost: {self.Connection[ConnectionId]["Hostname"]}:{self.Connection[ConnectionId]["Port"]}\r\nContent-Type: application/json; charset=utf-8\r\nAccept-Charset: utf-8\r\nAccept-Encoding: gzip,deflate\r\nUser-Agent: {utils.ClientUserAgent}\r\nConnection: close\r\nAuthorization: Emby Client="{utils.ClientName}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.ClientVersion}"\r\nContent-Length: 0\r\n\r\n'.encode("utf-8"))
+-                    self.Connection[ConnectionId]["Socket"].send(f'POST {self.Connection[ConnectionId]["SubUrl"]}System/Ping HTTP/1.1\r\nHost: {self.Connection[ConnectionId]["Hostname"]}:{self.Connection[ConnectionId]["Port"]}\r\nContent-Type: application/json; charset=utf-8\r\nAccept-Charset: utf-8\r\nAccept-Encoding: gzip,deflate\r\nUser-Agent: {utils.addon_name}/{utils.addon_version}\r\nConnection: close\r\nAuthorization: Emby Client="{utils.addon_name}", Device="{utils.device_name}", DeviceId="{self.EmbyServer.ServerData["DeviceId"]}", Version="{utils.addon_version}"\r\nContent-Length: 0\r\n\r\n'.encode("utf-8"))
 +                    DeviceId = self.EmbyServer.ServerData["DeviceId"]
 +                    UserId = self.EmbyServer.ServerData["UserId"]
 +                    AccessToken = self.EmbyServer.ServerData["AccessToken"]
@@ -126,9 +407,18 @@ index e3c7dfe..0c12f03 100644
      # No return values are expected, usually also lower priority
      def async_commands(self):
 diff --git a/vendor/emby-next-gen/emby/listitem.py b/sources/emby-next-gen/emby/listitem.py
-index 0376ed1..156608d 100644
+index e39dc80..156608d 100644
 --- a/vendor/emby-next-gen/emby/listitem.py
 +++ b/sources/emby-next-gen/emby/listitem.py
+@@ -157,7 +157,7 @@ def set_ListItem_from_Kodi_database(KodiItem, Path=None, ContentLookup=True):
+             InfoTags.setDuration(int(float(KodiItem['duration'])))
+ 
+         if KodiItem['artwork']:
+-            ListItem.setArt(KodiItem['artwork'])
++            ListItem.setArt(utils.add_image_user_agent_to_artwork(KodiItem['artwork']))
+ 
+         if KodiItem.get('genre'):
+             InfoTags.setGenres(KodiItem['genre'].split("/"))
 @@ -307,17 +307,33 @@ def set_ListItem(item, ServerId, Path=None, ContentLookup=True, ContentSupported
  #            common.set_trailer(item, utils.EmbyServers[ServerId])
  #            set_Trailer(item, InfoTags)
@@ -202,391 +492,66 @@ index 0376ed1..156608d 100644
      elif item['Type'] == "Episode":
          common.set_RunTimeTicks(item)
          common.set_playstate(item)
-diff --git a/vendor/emby-next-gen/helper/backup.py b/vendor/emby-next-gen/helper/backup.py
-deleted file mode 100644
-index c775d32..0000000
---- a/vendor/emby-next-gen/helper/backup.py
-+++ /dev/null
-@@ -1,379 +0,0 @@
--import os
--import base64
--
--try:
--    import zipfile
--    CompressionZip = True
--except:
--    CompressionZip = False
--
--import xbmcvfs
--import xbmc
--from helper import utils
--
--BackupInProgress = ""
--
--# Create backup root folder
--if not utils.backupPath:
--    utils.set_settings("backupPath", "special://profile/addon_data/plugin.service.emby-next-gen/backup/")
--
--if not xbmcvfs.exists(utils.backupPath):
--    utils.mkDir(utils.backupPath)
--
--def Backup():
--    global BackupInProgress
--
--    if not CompressionZip:
--        utils.Dialog.notification(heading=utils.addon_name, message=utils.Translate(33756), icon=utils.icon, time=utils.displayMessage)
--        return
--
--    if BackupInProgress:
--        utils.Dialog.notification(heading=utils.addon_name, message=f"{utils.Translate(33757)}: {BackupInProgress}", icon=utils.icon, time=utils.displayMessage)
--        return
--
--    xbmc.log("EMBY.helper.backup: -->[ backup ]", 1) # LOGINFO
--    BackupFilename = utils.Dialog.input(heading=utils.Translate(33755), defaultt=f"Kodi{xbmc.getInfoLabel('System.BuildVersion')[:2]} - {xbmc.getInfoLabel('System.Date(yyyy-mm-dd)')} {xbmc.getInfoLabel('System.Time(hh:mm:ss xx)').replace(':', '-')}")
--
--    if not BackupFilename:
--        xbmc.log("EMBY.helper.backup: --<[ backup ] invalid file", 1) # LOGINFO
--        return
--
--    BackupInProgress = BackupFilename
--    utils.close_dialog(10146) # addoninformation
--    utils.create_ProgressBar("Backup", utils.Translate(33199), utils.Translate(33651))
--
--    with zipfile.ZipFile(xbmcvfs.translatePath(f"{utils.backupPath}{BackupFilename}.zip"), 'w', zipfile.ZIP_STORED, strict_timestamps=False) as ZipFile: # Compression might corrupt data, do not use zipfile.ZIP_DEFLATED, user uncompressed!
--        # Backup service plugin
--        utils.update_ProgressBar("Backup", int(0 / 0.10), utils.Translate(33651), "plugin.service.emby-next-gen")
--        compress_Folder("special://home/addons/plugin.service.emby-next-gen/", ZipFile, (), (), (".pyc",))
--
--        # Backup audio plugin
--        utils.update_ProgressBar("Backup", int(1 / 0.10), utils.Translate(33651), "plugin.audio.emby-next-gen")
--        compress_Folder("special://home/addons/plugin.audio.emby-next-gen/", ZipFile, (), (), (".pyc",))
--
--        # Backup video plugin
--        utils.update_ProgressBar("Backup", int(2 / 0.10), utils.Translate(33651), "plugin.video.emby-next-gen")
--        compress_Folder("special://home/addons/plugin.video.emby-next-gen/", ZipFile, (), (), (".pyc",))
--
--        # Backup image plugin
--        utils.update_ProgressBar("Backup", int(3 / 0.10), utils.Translate(33651), "plugin.image.emby-next-gen")
--        compress_Folder("special://home/addons/plugin.image.emby-next-gen/", ZipFile, (), (), (".pyc",))
--
--        # Backup userdata
--        utils.update_ProgressBar("Backup", int(4 / 0.10), utils.Translate(33651), "userdata")
--        compress_Folder(utils.FolderAddonUserdata, ZipFile, (utils.backupPath, os.path.join(utils.DownloadPath, "EMBY-offline-content", ''), utils.backupPath, os.path.join(utils.DownloadPath, "EMBY-themes", ''), "special://profile/addon_data/plugin.service.emby-next-gen/backup/"), (), ())
--
--        # Backup library
--        utils.update_ProgressBar("Backup", int(5 / 0.10), utils.Translate(33651), "library")
--        compress_Folder("special://profile/library/", ZipFile, (), (), ())
--
--        # Backup playlists
--        utils.update_ProgressBar("Backup", int(6 / 0.10), utils.Translate(33651), "playlists")
--        compress_Folder("special://profile/playlists/", ZipFile, (), (), ())
--
--        # Backup music database
--        utils.SyncPause["Backup"] = True
--        utils.update_ProgressBar("Backup", int(7 / 0.10), utils.Translate(33651), "music database")
--        busy_KodiDatabase()
--        DatabaseSHM = f'{utils.DatabaseFiles["music"]}-shm'
--        DatabaseWAL = f'{utils.DatabaseFiles["music"]}-wal'
--        DatabaseCounter = 0
--
--        while xbmcvfs.exists(DatabaseSHM) or xbmcvfs.exists(DatabaseWAL):
--            xbmc.log(f"EMBY.helper.backup: music database is open, delay backup. Retry: {DatabaseCounter}", 1) # LOGINFO
--            utils.sleep(1)
--            DatabaseCounter += 1
--
--            if DatabaseCounter > 60:
--                xbmc.log(f"EMBY.helper.backup: music database is open, delay backup. Continue anyway (database open in read only leaves abandoned temp files), backup wal and shm files: {DatabaseCounter}", 1) # LOGINFO
--                break
--
--        compress_Folder("special://profile/Database/", ZipFile, (), ("MyMusic",), ())
--
--        # Backup video database
--        utils.update_ProgressBar("Backup", int(8 / 0.10), utils.Translate(33651), "video database")
--        busy_KodiDatabase()
--        DatabaseSHM = f'{utils.DatabaseFiles["video"]}-shm'
--        DatabaseWAL = f'{utils.DatabaseFiles["video"]}-wal'
--        DatabaseCounter = 0
--
--        while xbmcvfs.exists(DatabaseSHM) or xbmcvfs.exists(DatabaseWAL):
--            xbmc.log(f"EMBY.helper.backup: video database is open, delay backup. Retry: {DatabaseCounter}", 1) # LOGINFO
--            utils.sleep(1)
--            DatabaseCounter += 1
--
--            if DatabaseCounter > 60:
--                xbmc.log(f"EMBY.helper.backup: video database is open, delay backup. Continue anyway (database open in read only leaves abandoned temp files), backup wal and shm files: {DatabaseCounter}", 1) # LOGINFO
--                break
--
--        compress_Folder("special://profile/Database/", ZipFile, (), ("MyVideos",), ())
--
--        # Backup emby database
--        utils.update_ProgressBar("Backup", int(9 / 0.10), utils.Translate(33651), "emby database")
--
--        for ServerId in utils.EmbyServers:
--            EmbyDatabaseFile = utils.DatabaseFiles[ServerId]
--            DatabaseSHM = f'{EmbyDatabaseFile}-shm'
--            DatabaseWAL = f'{EmbyDatabaseFile}-wal'
--            DatabaseCounter = 0
--
--            while xbmcvfs.exists(DatabaseSHM) or xbmcvfs.exists(DatabaseWAL):
--                xbmc.log(f"EMBY.helper.backup: emby database {ServerId} is open, delay backup. Retry: {DatabaseCounter}", 1) # LOGINFO
--                utils.sleep(1)
--                DatabaseCounter += 1
--
--                if DatabaseCounter > 5:
--                    xbmc.log(f"EMBY.helper.backup: video database {ServerId} is open, delay backup. Continue anyway (database open in read only leaves abandoned temp files), backup wal and shm files: {DatabaseCounter}", 1) # LOGINFO
--                    break
--
--        compress_Folder("special://profile/Database/", ZipFile, (), ("emby",), ())
--        utils.SyncPause["Backup"] = False
--
--        # Backup favourites
--        utils.update_ProgressBar("Backup", int(10 / 0.10), utils.Translate(33651), "favourites")
--
--        if xbmcvfs.exists("special://profile/favourites.xml"):
--            compress_Files(["favourites.xml"], (), (), "special://profile/", ZipFile)
--
--    utils.close_ProgressBar("Backup")
--    utils.Dialog.notification(heading=utils.addon_name, message=f"{utils.Translate(33091)} {BackupFilename}", icon=utils.icon, time=utils.displayMessage)
--    BackupInProgress = ""
--    xbmc.log("EMBY.helper.backup: --<[ backup ]", 1) # LOGINFO
--
--def Restore():
--    if not CompressionZip:
--        utils.Dialog.notification(heading=utils.addon_name, message=utils.Translate(33756), icon=utils.icon, time=utils.displayMessage)
--        return
--
--    if BackupInProgress:
--        utils.Dialog.notification(heading=utils.addon_name, message=f"{utils.Translate(33757)}: {BackupInProgress}", icon=utils.icon, time=utils.displayMessage)
--        return
--
--    xbmc.log("EMBY.helper.backup: -->[ restore ]", 1) # LOGINFO
--    utils.SystemShutdown = True
--    RestoreFile = utils.Dialog.browseSingle(type=1, heading=utils.Translate(33643), shares='files', mask='.zip', defaultt=utils.backupPath)
--
--    if not RestoreFile or not RestoreFile.lower().endswith(".zip"):
--        xbmc.log(f"EMBY.helper.backup: --<[ restore ] invalid file: {RestoreFile}", 1) # LOGINFO
--        return
--
--    utils.close_dialog(10146) # addoninformation
--    RestoreFile = xbmcvfs.translatePath(RestoreFile)
--    FolderExtract = "special://profile/addon_data/plugin.service.emby-next-gen/extract/"
--    utils.delFolder(FolderExtract)
--    utils.mkDir(FolderExtract)
--    FolderExtractReal = xbmcvfs.translatePath(FolderExtract)
--    utils.create_ProgressBar("Restore", utils.Translate(33199), utils.Translate(33255))
--
--    with zipfile.ZipFile(RestoreFile, 'r', strict_timestamps=False) as ZipFile:
--        NameList = ZipFile.namelist()
--        TotalItems = len(NameList) / 100
--
--        for Index, CompressedFile in enumerate(NameList):
--            utils.update_ProgressBar("Restore", Index / TotalItems, utils.Translate(33255), CompressedFile)
--
--            ZipFile.extract(CompressedFile, path=FolderExtractReal)
--            FileExtract = f"{FolderExtract}{CompressedFile}"
--            FileDestination = f"special://{base64.urlsafe_b64decode(CompressedFile).decode('utf-8')}"
--
--            if FileDestination.endswith(".db"):
--                WALFile = FileDestination.replace(".db", ".db-wal")
--                SHMFile = FileDestination.replace(".db", ".db-shm")
--
--                if xbmcvfs.exists(WALFile):
--                    utils.delFile(WALFile)
--
--                if xbmcvfs.exists(SHMFile):
--                    utils.delFile(SHMFile)
--
--            if xbmcvfs.exists(FileDestination):
--                utils.delFile(FileDestination)
--
--            if not utils.renameFile(FileExtract, FileDestination):
--                utils.copyFile(FileExtract, FileDestination)
--
--    utils.delFolder(FolderExtract)
--    utils.close_ProgressBar("Restore")
--    utils.Dialog.notification(heading=utils.addon_name, message=f"{utils.Translate(33860)} {RestoreFile}", icon=utils.icon, time=utils.displayMessage)
--    xbmc.log("EMBY.helper.backup: --<[ restore ]", 1) # LOGINFO
--    utils.restart_kodi()
--
--def Delete():
--    xbmc.log("EMBY.helper.backup: -->[ delete ]", 1) # LOGINFO
--    DeleteFile = utils.Dialog.browseSingle(type=1, heading=utils.Translate(33754), shares='files', mask='.zip', defaultt=utils.backupPath)
--
--    if not DeleteFile:
--        xbmc.log("EMBY.helper.backup: --<[ backup ] invalid file", 1) # LOGINFO
--        return
--
--    utils.delFile(DeleteFile)
--    xbmc.log("EMBY.helper.backup: --<[ delete ]", 1) # LOGINFO
--
--# Backup current plugin for rollbacks on updates
--def create_Rollback():
--    xbmc.log("EMBY.helper.backup: -->[ update rollback ]", 1) # LOGINFO
--    Forced = False
--
--    if utils.CurrentServicePluginVersion != utils.addon_version:
--        Forced = True
--        utils.set_settings("CurrentServicePluginVersion", utils.addon_version)
--
--    # backup service plugin
--    RollbackFolder = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.service.emby-next-gen/"
--    Exists = xbmcvfs.exists(RollbackFolder)
--
--    if Exists and Forced:
--        xbmc.log("EMBY.helper.backup: update rollback: delete plugin.service.emby-next-gen", 1) # LOGINFO
--        utils.delFolder(RollbackFolder)
--        Exists = False
--
--    if not Exists:
--        xbmc.log("EMBY.helper.backup: copy rollback: delete plugin.service.emby-next-gen", 1) # LOGINFO
--        utils.mkDir("special://profile/addon_data/plugin.service.emby-next-gen/rollback/")
--        utils.mkDir(RollbackFolder)
--        utils.copytree("special://home/addons/plugin.service.emby-next-gen/", RollbackFolder, (".pyc",), True, False)
--
--    # backup audio plugin
--    RollbackFolder = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.audio.emby-next-gen/"
--    Exists = xbmcvfs.exists(RollbackFolder)
--
--    if Exists and Forced:
--        xbmc.log("EMBY.helper.backup: update rollback: delete plugin.audio.emby-next-gen", 1) # LOGINFO
--        utils.delFolder(RollbackFolder)
--        Exists = False
--
--    if not Exists and xbmcvfs.exists("special://home/addons/plugin.audio.emby-next-gen/"):
--        xbmc.log("EMBY.helper.backup: copy rollback: delete plugin.audio.emby-next-gen", 1) # LOGINFO
--        utils.mkDir("special://profile/addon_data/plugin.service.emby-next-gen/rollback/")
--        utils.mkDir(RollbackFolder)
--        utils.copytree("special://home/addons/plugin.audio.emby-next-gen/", RollbackFolder, (".pyc",), True, False)
--
--    # backup video plugin
--    RollbackFolder = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.video.emby-next-gen/"
--    Exists = xbmcvfs.exists(RollbackFolder)
--
--    if Exists and Forced:
--        xbmc.log("EMBY.helper.backup: update rollback: delete plugin.video.emby-next-gen", 1) # LOGINFO
--        utils.delFolder(RollbackFolder)
--        Exists = False
--
--    if not Exists and xbmcvfs.exists("special://home/addons/plugin.video.emby-next-gen/"):
--        xbmc.log("EMBY.helper.backup: copy rollback: delete plugin.video.emby-next-gen", 1) # LOGINFO
--        utils.mkDir("special://profile/addon_data/plugin.service.emby-next-gen/rollback/")
--        utils.mkDir(RollbackFolder)
--        utils.copytree("special://home/addons/plugin.video.emby-next-gen/", RollbackFolder, (".pyc",), True, False)
--
--    # backup image plugin
--    RollbackFolder = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.image.emby-next-gen/"
--    Exists = xbmcvfs.exists(RollbackFolder)
--
--    if Exists and Forced:
--        xbmc.log("EMBY.helper.backup: update rollback: delete plugin.image.emby-next-gen", 1) # LOGINFO
--        utils.delFolder(RollbackFolder)
--        Exists = False
--
--    if not Exists and xbmcvfs.exists("special://home/addons/plugin.image.emby-next-gen/"):
--        xbmc.log("EMBY.helper.backup: copy rollback: delete plugin.image.emby-next-gen", 1) # LOGINFO
--        utils.mkDir("special://profile/addon_data/plugin.service.emby-next-gen/rollback/")
--        utils.mkDir(RollbackFolder)
--        utils.copytree("special://home/addons/plugin.image.emby-next-gen/", RollbackFolder, (".pyc",), True, False)
--
--    xbmc.log("EMBY.helper.backup: --<[ update rollback ]", 1) # LOGINFO
--
--def restore_Rollback():
--    Success = False
--    xbmc.log("EMBY.helper.backup: -->[ rollback ]", 1) # LOGINFO
--    # Restore service plugin
--    RestoreServicePlugin = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.service.emby-next-gen/"
--
--    if xbmcvfs.exists(RestoreServicePlugin):
--        utils.copytree(RestoreServicePlugin, "special://home/addons/plugin.service.emby-next-gen/", (), True, True)
--        Success = True
--
--    # Restore video plugin
--    RestoreVideoPlugin = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.video.emby-next-gen/"
--
--    if xbmcvfs.exists(RestoreVideoPlugin):
--        utils.copytree(RestoreVideoPlugin, "special://home/addons/plugin.video.emby-next-gen/", (), True, True)
--
--    # Restore audio plugin
--    RestoreAudioPlugin = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.audio.emby-next-gen/"
--
--    if xbmcvfs.exists(RestoreAudioPlugin):
--        utils.copytree(RestoreAudioPlugin, "special://home/addons/plugin.audio.emby-next-gen/", (), True, True)
--
--    # Restore image plugin
--    RestoreImagePlugin = "special://profile/addon_data/plugin.service.emby-next-gen/rollback/plugin.image.emby-next-gen/"
--
--    if xbmcvfs.exists(RestoreImagePlugin):
--        utils.copytree(RestoreImagePlugin, "special://home/addons/plugin.image.emby-next-gen/", (), True, True)
--
--    xbmc.log("EMBY.helper.backup: --<[ rollback ]", 1) # LOGINFO
--    return Success
--
--def compress_Folder(PathSource, ZipFile, FoldersExclude, FileBegins, FileEndsExclude):
--    Folders, Filenames = xbmcvfs.listdir(PathSource)
--
--    if Folders:
--        compress_Recursive(PathSource, Folders, FoldersExclude, FileBegins, FileEndsExclude, ZipFile)
--
--    compress_Files(Filenames, FileBegins, FileEndsExclude, PathSource, ZipFile)
--    xbmc.log(f"EMBY.helper.utils: Compressed {PathSource}", 1) # LOGINFO
--
--def compress_Recursive(PathSource, Folders, FoldersExclude, FileBegins, FileEndsExclude, ZipFile):
--    for Folder in Folders:
--        FolderSource = os.path.join(PathSource, Folder, '')
--
--        # Skip folder by FoldersExclude
--        if FolderSource in FoldersExclude:
--            if utils.DebugLog: xbmc.log(f"EMBY.helper.utils (DEBUG): Skip folder compress {FolderSource}", 1) # LOGDEBUG
--            continue
--
--        SubFolders, Filenames = xbmcvfs.listdir(FolderSource)
--
--        if SubFolders:
--            compress_Recursive(FolderSource, SubFolders, FoldersExclude, FileBegins, FileEndsExclude, ZipFile)
--
--        compress_Files(Filenames, FileBegins, FileEndsExclude, FolderSource, ZipFile)
--
--def compress_Files(Filenames, FileBegins, FileEndsExclude, FolderSource, ZipFile):
--    for Filename in Filenames:
--        # Filter by filename begin
--        if FileBegins:
--            for FileBegin in FileBegins:
--                if Filename.startswith(FileBegin):
--                    break
--            else: # prefix not found
--                if utils.DebugLog: xbmc.log(f"EMBY.helper.utils (DEBUG): Filecompress filtered by filename begin: {Filename}", 1) # LOGDEBUG
--                continue
--
--        # Filter by exclude filename end
--        if FileEndsExclude:
--            Skip = False
--
--            for FileEndExclude in FileEndsExclude:
--                if Filename.endswith(FileEndExclude):
--                    Skip = True
--                    break
--
--            if Skip:
--                if utils.DebugLog: xbmc.log(f"EMBY.helper.utils (DEBUG): Filecompress filtered by excluded filename end: {Filename}", 1) # LOGDEBUG
--                continue
--
--        CompressFile = xbmcvfs.translatePath(os.path.join(FolderSource, Filename))
--
--        if xbmcvfs.exists(CompressFile):
--            ArchiveName = base64.urlsafe_b64encode(f"{FolderSource.replace('special://', '')}{Filename}".encode('utf-8')).decode('utf-8') # workaround for zipfile ascii issues
--            ZipFile.write(CompressFile.encode('utf-8'), arcname=ArchiveName)
--        else:
--            if utils.DebugLog: xbmc.log(f"EMBY.helper.utils (DEBUG): Filecompress, file not found: {CompressFile}", 1) # LOGDEBUG
--
--def busy_KodiDatabase():
--    xbmc.log("EMBY.helper.backup (DEBUG): CONDITION: --->[ SyncPauseCondition ]", 1) # LOGDEBUG
--
--    with utils.SafeLock(utils.SyncPauseCondition):
--        while 'kodi_rw' in utils.SyncPause and utils.SyncPause['kodi_rw']:
--            utils.SyncPauseCondition.wait(timeout=0.1)
--
--    xbmc.log("EMBY.helper.backup (DEBUG): CONDITION: ---<[ SyncPauseCondition ]", 1) # LOGDEBUG
--    xbmc.log("EMBY.helper.backup: Kodi database is busy, delay backup.", 1) # LOGINFO
+@@ -636,7 +661,7 @@ def set_ListItem(item, ServerId, Path=None, ContentLookup=True, ContentSupported
+         cast = ()
+ 
+         for person in item['ArtistItems']:
+-            cast += ((xbmc.Actor(person['Name'], "Artist", len(cast) + 1, person['imageurl'])),)
++            cast += ((xbmc.Actor(person['Name'], "Artist", len(cast) + 1, utils.add_image_user_agent(person['imageurl']))),)
+ 
+     if IsVideo and 'People' in item and item['People']:
+         cast = ()
+@@ -644,7 +669,7 @@ def set_ListItem(item, ServerId, Path=None, ContentLookup=True, ContentSupported
+         for person in item['People']:
+             if person['Type'] in ("Actor", 'Director', 'GuestStar'):
+                 if str(person['imageurl']).startswith("http"):
+-                    ImageUrl = person['imageurl']
++                    ImageUrl = utils.add_image_user_agent(person['imageurl'])
+                 else:
+                     ImageUrl = ""
+ 
+@@ -659,10 +684,10 @@ def set_ListItem(item, ServerId, Path=None, ContentLookup=True, ContentSupported
+         for KodiArtworkId, ArtworkValue in list(item['KodiArtwork'].items()):
+             if KodiArtworkId == 'fanart':
+                 for KodiArtworkIdFanart, ArtworkValueFanart in list(ArtworkValue.items()):
+-                    ArtworkData[KodiArtworkIdFanart] = ArtworkValueFanart
++                    ArtworkData[KodiArtworkIdFanart] = utils.add_image_user_agent(ArtworkValueFanart)
+             else:
+                 if ArtworkValue:
+-                    ArtworkData[KodiArtworkId] = ArtworkValue
++                    ArtworkData[KodiArtworkId] = utils.add_image_user_agent(ArtworkValue)
+ 
+         listitem.setArt(ArtworkData)
+ 
+diff --git a/vendor/emby-next-gen/emby/views.py b/sources/emby-next-gen/emby/views.py
+index 2731e7e..d6091a8 100644
+--- a/vendor/emby-next-gen/emby/views.py
++++ b/sources/emby-next-gen/emby/views.py
+@@ -440,7 +440,7 @@ class Views:
+                 library['ContentType'] = library.get('CollectionType', "mixed")
+ 
+             if "Primary" in library["ImageTags"]:
+-                IconPath = f"http://127.0.0.1:57342/picture/{self.EmbyServer.ServerData['ServerId']}/p-{library['Id']}-0-p-{library['ImageTags']['Primary']}"
++                IconPath = utils.add_image_user_agent(f"http://127.0.0.1:57342/picture/{self.EmbyServer.ServerData['ServerId']}/p-{library['Id']}-0-p-{library['ImageTags']['Primary']}")
+ 
+             self.ViewItems[library['Id']] = [utils.decode_XML(library['Name']), library['ContentType'], IconPath]
+ 
+diff --git a/vendor/emby-next-gen/helper/artworkcache.py b/sources/emby-next-gen/helper/artworkcache.py
+index 2151b0e..cec7c17 100644
+--- a/vendor/emby-next-gen/helper/artworkcache.py
++++ b/sources/emby-next-gen/helper/artworkcache.py
+@@ -32,8 +32,9 @@ def CacheAllEntries(urls, WorkerName):
+         if not url[0]:
+             continue
+ 
+-        Folder = url[0].split("/")
+-        Data = url[0][url[0].rfind("/") + 1:].split("-")
++        ArtworkUrl = utils.get_image_path_without_options(url[0])
++        Folder = ArtworkUrl.split("/")
++        Data = ArtworkUrl[ArtworkUrl.rfind("/") + 1:].split("-")
+ 
+         if len(Data) < 4 or len(Folder) < 5:
+             xbmc.log(f"EMBY.helper.pluginmenu: Artwork cache: Invalid item found {url}", 2) # LOGWARNING
 diff --git a/vendor/emby-next-gen/helper/cache.py b/sources/emby-next-gen/helper/cache.py
 index 097994b..bfda513 100644
 --- a/vendor/emby-next-gen/helper/cache.py
@@ -642,10 +607,10 @@ index 097994b..bfda513 100644
  
  def update_querycache_userdata(UserDatas):
 diff --git a/vendor/emby-next-gen/helper/pluginmenu.py b/sources/emby-next-gen/helper/pluginmenu.py
-index 3d0fc44..2abdd19 100644
+index 14d42e8..2abdd19 100644
 --- a/vendor/emby-next-gen/helper/pluginmenu.py
 +++ b/sources/emby-next-gen/helper/pluginmenu.py
-@@ -13,14 +13,109 @@ from . import utils, playerops, xmls, artworkcache, cache
+@@ -13,10 +13,187 @@ from . import utils, playerops, xmls, artworkcache, cache
  SearchTerm = ""
  MappingStaggered = {"Series": "Season", "Season": "Episode", "PhotoAlbum": "HomeVideos", "MusicAlbum": "Audio"} # additional stagged content parameter written in the code, based on conditions
  letters = ("0-9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z")
@@ -654,7 +619,6 @@ index 3d0fc44..2abdd19 100644
  Subcontent = {"tvshows": ("Series", "Season", "Episode", "Genre", "BoxSet"), "movies": ("Movie", "Genre", "BoxSet"), "music": ("MusicArtist", "MusicAlbum", "MusicGenre", "BoxSet", "Audio"), "musicvideos": ("MusicArtist", "MusicGenre", "BoxSet"), "homevideos": ("Photo", "PhotoAlbum", "Video"), "videos": ("Series", "Season", "Episode", "Genre", "BoxSet", "Movie", "Video", "Person"), "playablevideos": ("MusicVideo", "Episode", "Movie", "Video"), "PlaylistsAudio": ("Audio",), "PlaylistsVideo": ("All",), "Playlists": ("Audio", "MusicVideo", "Episode", "Movie", "Video"), "photos": ("PhotoAlbum", "Photo"), "PhotoAlbum": ("Photo", "PhotoAlbum", "Video", "Folder")}
  IconMapping = {"MusicArtist": "DefaultMusicArtists.png", "MusicAlbum": "DefaultMusicAlbums.png", "Audio": "DefaultMusicSongs.png", "Movie": "DefaultMovies.png", "Trailer": "DefaultAddonVideo.png", "BoxSet": "DefaultSets.png", "Series": "DefaultTVShows.png", "Season": "DefaultTVShowTitle.png", "Episode": "DefaultAddonVideo.png", "MusicVideo": "DefaultMusicVideos.png", "Video": "DefaultAddonVideo.png", "Photo": "DefaultPicture.png", "PhotoAlbum": "DefaultAddonPicture.png", "TvChannel": "DefaultAddonPVRClient.png", "Folder": "DefaultFolder.png", "Playlist": "DefaultPlaylist.png", "Genre": "DefaultGenre.png", "MusicGenre": "DefaultMusicGenres.png", "Person": "DefaultActor.png", "Tag": "DefaultTags.png", "Channel": "DefaultFolder.png", "CollectionFolder": "DefaultFolder.png", "Studio": "DefaultStudios.png"}
  LibraryMenu = {"LibraryAdd": utils.Translate(33154), "LibraryRemove": utils.Translate(33184), "LibraryUpdate": utils.Translate(33139), "LibraryRepair": utils.Translate(33140), "RefreshBoxsets": utils.Translate(33098), "RefreshMusicvideoLinks": utils.Translate(33749), "ToggleLiveTv": "", "RefreshLiveTv": utils.Translate(33706)}
--DynamicPageQueries = ("Letter", "Playlist", "Playlists", "PlaylistsAudio", "PlaylistsVideo", "Video", "Trailer", "All", "BoxSet", "Season", "Episode", "Series", "Photo", "HomeVideos", "PhotoAlbum", "MusicVideo", "VideoMusicArtist", "MusicArtist", "MusicGenre", "Genre", "Person", "Tag", "Movie", "Audio", "MusicAlbum", "Search", "Folder", "Favorite", "Inprogress", "Resume")
 +DynamicPageQueries = ("Letter", "Playlist", "Playlists", "PlaylistsAudio", "PlaylistsVideo", "Video", "Trailer", "All", "BoxSet", "Season", "Episode", "Series", "Photo", "HomeVideos", "PhotoAlbum", "MusicVideo", "VideoMusicArtist", "MusicArtist", "MusicGenre", "Genre", "Person", "Tag", "Movie", "Audio", "MusicAlbum", "Search", "Folder", "Favorite", "Inprogress", "Resume", "Recentlyadded")
 +# Only broad library/browse nodes expose the server-side sort/filter menu.
 +# Short-lived preset nodes (Recentlyadded, Favorite, Inprogress, Resume and
@@ -734,8 +698,7 @@ index 3d0fc44..2abdd19 100644
 +def _apply_dynamic_query_state(Extras, State):
 +    if State.get('sortby'):
 +        Extras['SortBy'] = State['sortby']
- 
--def _dynamic_page_path(Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported, StartIndex, PageSize):
++
 +    if State.get('sortorder'):
 +        Extras['SortOrder'] = State['sortorder']
 +
@@ -748,20 +711,29 @@ index 3d0fc44..2abdd19 100644
 +    return f"plugin://plugin.service.emby-next-gen/?{urlencode(Params)}"
 +
 +def _dynamic_page_path(Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported, StartIndex, PageSize, State=None, SearchTermParam=None, SearchTypeParam=None):
-     Params = {'id': Id, 'mode': 'browse', 'query': query, 'server': ServerId, 'parentid': ParentId, 'content': Content, 'libraryid': LibraryId, 'contentsupported': ContentSupported, 'startindex': StartIndex, 'pagesize': PageSize}
++    Params = {'id': Id, 'mode': 'browse', 'query': query, 'server': ServerId, 'parentid': ParentId, 'content': Content, 'libraryid': LibraryId, 'contentsupported': ContentSupported, 'startindex': StartIndex, 'pagesize': PageSize}
 +    if State:
 +        Params.update({Key: Value for Key, Value in State.items() if Value})
 +    if query == "Search":
 +        Params['searchterm'] = SearchTermParam or ""
 +        if SearchTypeParam:
 +            Params['searchtype'] = SearchTypeParam
-     return f"plugin://plugin.service.emby-next-gen/?{urlencode(Params)}"
- 
- def _dynamic_page_context(StartIndex, PageSize):
-@@ -37,6 +132,69 @@ def _dynamic_page_context(StartIndex, PageSize):
-     PageSize = max(25, min(PageSize, 250))
-     return StartIndex, PageSize
- 
++    return f"plugin://plugin.service.emby-next-gen/?{urlencode(Params)}"
++
++def _dynamic_page_context(StartIndex, PageSize):
++    try:
++        StartIndex = max(0, int(StartIndex or 0))
++    except (TypeError, ValueError):
++        StartIndex = 0
++
++    try:
++        PageSize = int(PageSize or utils.DynamicPageSize)
++    except (TypeError, ValueError):
++        PageSize = utils.DynamicPageSize
++
++    PageSize = max(25, min(PageSize, 250))
++    return StartIndex, PageSize
++
 +def _dynamic_cache_id(Id, query, ParentId, ContentRequest, ServerId, LibraryId, StartIndex, PageSize, State, SearchContext="", SearchTypeContext=""):
 +    """Build a collision-resistant identity for one Dynamic result page."""
 +    Params = (
@@ -824,44 +796,44 @@ index 3d0fc44..2abdd19 100644
 +        if utils.DebugLog:
 +            xbmc.log(f"EMBY.helper.pluginmenu (DEBUG): Dynamic prefetch scheduled: {PrefetchKey}", 1) # LOGDEBUG
 +        utils.start_thread(_dynamic_prefetch_page, (PrefetchKey, API, RequestParams, PageStartIndex + PageSize, PageSize))
-+
+ 
  # Build plugin menu
  def listing(Handle, ContentSupported):
-     ItemsListings = []
-@@ -63,7 +221,7 @@ def listing(Handle, ContentSupported):
+@@ -44,7 +221,7 @@ def listing(Handle, ContentSupported):
      xbmcplugin.endOfDirectory(Handle, cacheToDisc=False, updateListing=False)
  
  # Browse dynamically content
--def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported, StartIndex=0, PageSize=None):
+-def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported):
 +def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSupported, StartIndex=0, PageSize=None, SortBy="", SortOrder="", Filters="", SearchTermParam=None, SearchTypeParam=None):
      Handle = int(Handle)
  
      if not xbmcplugin.addDirectoryItems(Handle, (), 0):
-@@ -75,14 +233,21 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+@@ -56,7 +233,23 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
      ItemsListings = []
      utils.close_busyDialog()
  
+-    if WindowId not in (10502, 10025, 10002, 10035):
 +    ContentRequest = Content
-     DynamicPage = query in DynamicPageQueries
-     PageHasNext = False
++    DynamicPage = query in DynamicPageQueries
++    PageHasNext = False
 +    DynamicState = _dynamic_query_state(SortBy, SortOrder, Filters) if DynamicPage else {}
 +    # Keyboard search still uses the legacy module-level value. Fuse can pass
 +    # a search term directly in the browse URL, which must take precedence and
 +    # must also be allowed to clear a previous keyboard search.
 +    EffectiveSearchTerm = SearchTerm if SearchTermParam is None else SearchTermParam
 +    SearchMediaTypes, SearchTypeContext = _search_media_types(SearchTypeParam)
- 
-     if DynamicPage:
-         PageStartIndex, PageSize = _dynamic_page_context(StartIndex, PageSize)
-         Extras = {"Limit": PageSize + 1, "DynamicStartIndex": PageStartIndex}
--        SearchContext = SearchTerm if query == "Search" else ""
--        CacheId = f"{Id}{query}{ParentId}{ServerId}{LibraryId}P{PageStartIndex}S{PageSize}{SearchContext}"
++
++    if DynamicPage:
++        PageStartIndex, PageSize = _dynamic_page_context(StartIndex, PageSize)
++        Extras = {"Limit": PageSize + 1, "DynamicStartIndex": PageStartIndex}
 +        SearchContext = EffectiveSearchTerm if query == "Search" else ""
 +        CacheId = _dynamic_cache_id(Id, query, ParentId, ContentRequest, ServerId, LibraryId, PageStartIndex, PageSize, DynamicState, SearchContext, SearchTypeContext)
-         if utils.DebugLog: xbmc.log(f"EMBY.helper.pluginmenu (DEBUG): Dynamic page start/size: {PageStartIndex}/{PageSize}", 1) # LOGDEBUG
-     elif WindowId not in (10502, 10025, 10002, 10035):
++        if utils.DebugLog: xbmc.log(f"EMBY.helper.pluginmenu (DEBUG): Dynamic page start/size: {PageStartIndex}/{PageSize}", 1) # LOGDEBUG
++    elif WindowId not in (10502, 10025, 10002, 10035):
          Extras = {"Limit": utils.maxnodeitems}
-@@ -101,8 +266,6 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+         CacheId = f"{Id}{query}{ParentId}{ServerId}{LibraryId}{utils.maxnodeitems}"
+     else:
+@@ -73,8 +266,6 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
          WindowIdCheck = True
  
      if utils.DebugLog: xbmc.log(f"EMBY.helper.pluginmenu (DEBUG): WindowIdCheck: {WindowIdCheck}", 1)
@@ -870,11 +842,11 @@ index 3d0fc44..2abdd19 100644
      if query in ('NodesDynamic', 'NodesSynced'):
          for Node in utils.EmbyServers[ServerId].Views.Nodes[query]:
              if (ContentSupported == "audio" and Node['path'].startswith("library://music/")) or (ContentSupported == "video" and Node['path'].startswith("library://video/")):
-@@ -122,10 +285,13 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+@@ -94,10 +285,13 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
      CachedItem = cache.QueryCache.get(ContentRequest, {}).get(CacheId)
  
      if CachedItem:
--        if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, CachedItem['node_id'], CachedItem['query'], CachedItem['server_id'], CachedItem['parent_id'], CachedItem['library_id'], ContentSupported, PageStartIndex if DynamicPage else 0, PageSize if DynamicPage else None):
+-        if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, CachedItem['node_id'], CachedItem['query'], CachedItem['server_id'], CachedItem['parent_id'], CachedItem['library_id'], ContentSupported):
 +        if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, CachedItem['node_id'], CachedItem['query'], CachedItem['server_id'], CachedItem['parent_id'], CachedItem['library_id'], ContentSupported, PageStartIndex if DynamicPage else 0, PageSize if DynamicPage else None, DynamicState, CachedItem.get('search_context', ''), CachedItem.get('search_type', '')):
              return
  
@@ -886,7 +858,7 @@ index 3d0fc44..2abdd19 100644
          return
  
      Unsorted = False
-@@ -170,11 +336,16 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+@@ -142,11 +336,16 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
  
          Content, ItemsListings, WindowIdCheck = unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId, True, Id, WindowIdCheck, ContentSupported, ContentRequest)
      elif query == 'Recentlyadded':
@@ -905,7 +877,7 @@ index 3d0fc44..2abdd19 100644
          RequestParams = (ParentId, (Content,), True, Extras, False, LibraryId)
          Unsorted = True
      elif query == 'Favorite':
-@@ -239,11 +410,11 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+@@ -211,11 +410,11 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
  
          Unsorted = True
      elif query == 'Season':
@@ -919,7 +891,17 @@ index 3d0fc44..2abdd19 100644
          ParentId = Id
          RequestParams = (ParentId, ("Episode",), True, Extras, False, LibraryId)
      elif query == 'Series':
-@@ -333,12 +504,23 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+@@ -244,7 +443,8 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+ 
+         RequestParams = (ParentId, ("MusicVideo",), True, Extras, False, LibraryId)
+     elif query in ('VideoMusicArtist', 'MusicArtist'):
+-        RequestParams = (ParentId, ("MusicArtist",), True, {"SortBy": "SortName"}, False, LibraryId)
++        Extras.update({"SortBy": "SortName"})
++        RequestParams = (ParentId, ("MusicArtist",), True, Extras, False, LibraryId)
+     elif query == 'MusicGenre':
+         if ParentId == Id:
+             Extras.update({"SortBy": "SortName"})
+@@ -304,12 +504,31 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
  
          RequestParams = (ParentId, ("MusicAlbum",), True, Extras, False, LibraryId)
      elif query == 'Search':
@@ -934,8 +916,7 @@ index 3d0fc44..2abdd19 100644
 +    PrefetchedItems = cache.take_dynamic_prefetch(PrefetchKey) if DynamicPage else None
  
      if RequestParams:
-         if DynamicPage:
--            PageItems = list(utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams))
++        if DynamicPage:
 +            _apply_dynamic_query_state(RequestParams[3], DynamicState)
 +
 +        if DynamicPage:
@@ -943,41 +924,57 @@ index 3d0fc44..2abdd19 100644
 +                PageItems = list(utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams))
 +            else:
 +                PageItems = PrefetchedItems
-             PageHasNext = len(PageItems) > PageSize
-             PageItems = PageItems[:PageSize]
-             ItemsIterator = iter(PageItems)
-@@ -361,32 +543,81 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
-                 for Item in ItemsIterator:
++            PageHasNext = len(PageItems) > PageSize
++            PageItems = PageItems[:PageSize]
++            ItemsIterator = iter(PageItems)
++        else:
++            ItemsIterator = utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams)
++
+         if Content == "PlaylistsVideo" and RequestParams[1] != ("Playlist",):
+-            for Item in utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams):
++            for Item in ItemsIterator:
+                 if Item['Type'] in ("MusicVideo", "Episode", "Movie", "Video"):
+                     ItemsListings = load_ListItem(ParentId, Item, ServerId, ItemsListings, Item['Type'], LibraryId, ContentSupported, ContentRequest)
+         else:
+@@ -317,28 +536,88 @@ def browse(Handle, Id, query, ParentId, Content, ServerId, LibraryId, ContentSup
+             SortItems = {"MusicArtist": (), "MusicAlbum": (), "Audio": (), "Movie": (), "Trailer": (), "BoxSet": (), "Series": (), "Season": (), "Episode": (), "MusicVideo": (), "Video": (), "Photo": (), "PhotoAlbum": (), "TvChannel": (), "Folder": (), "Playlist": (), "Genre": (), "MusicGenre": (), "Person": (), "Tag": (), "Channel": (), "CollectionFolder": (), "Studio": ()}
+ 
+             if query == "Playlist":
+-                for Index, Item in enumerate(utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams), 1):
++                for Index, Item in enumerate(ItemsIterator, 1):
+                     Item['IndexNumber'] = Index
+                     add_unifyedItem(Item, Doublesfilter, SortItems)
+             else:
+-                for Item in utils.EmbyServers[ServerId].API.get_Items_dynamic(*RequestParams):
++                for Item in ItemsIterator:
                      add_unifyedItem(Item, Doublesfilter, SortItems)
  
 -            Content, ItemsListings, WindowIdCheck = unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId, Unsorted, Id, WindowIdCheck, ContentSupported, ContentRequest)
 +            Content, ItemsListings, WindowIdCheck = unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId, Unsorted, Id, WindowIdCheck, ContentSupported, ContentRequest, query == "Search")
- 
-     if DynamicPage:
-         PageParentId = ParentId
-         PageContent = ContentRequest
- 
++
++    if DynamicPage:
++        PageParentId = ParentId
++        PageContent = ContentRequest
++
 +        if PageStartIndex == 0 and query in DynamicOptionsQueries:
 +            OptionsListings = []
 +            OptionsListings = add_ListItem(OptionsListings, utils.Translate(33863), _dynamic_options_path(Id, query, PageParentId, PageContent, ServerId, LibraryId, ContentSupported, PageSize, DynamicState), "DefaultAddon.png", "")
 +            ItemsListings = OptionsListings + ItemsListings
 +
-         if PageStartIndex > 0:
--            ItemsListings = add_ListItem(ItemsListings, "上一页", _dynamic_page_path(Id, query, PageParentId, PageContent, ServerId, LibraryId, ContentSupported, max(0, PageStartIndex - PageSize), PageSize), "DefaultFolder.png", "")
++        if PageStartIndex > 0:
 +            ItemsListings = add_ListItem(ItemsListings, "上一页", _dynamic_page_path(Id, query, PageParentId, PageContent, ServerId, LibraryId, ContentSupported, max(0, PageStartIndex - PageSize), PageSize, DynamicState, EffectiveSearchTerm, SearchTypeContext), "DefaultFolder.png", "")
- 
-         if PageHasNext:
--            ItemsListings = add_ListItem(ItemsListings, "下一页", _dynamic_page_path(Id, query, PageParentId, PageContent, ServerId, LibraryId, ContentSupported, PageStartIndex + PageSize, PageSize), "DefaultFolder.png", "")
++
++        if PageHasNext:
 +            ItemsListings = add_ListItem(ItemsListings, "下一页", _dynamic_page_path(Id, query, PageParentId, PageContent, ServerId, LibraryId, ContentSupported, PageStartIndex + PageSize, PageSize, DynamicState, EffectiveSearchTerm, SearchTypeContext), "DefaultFolder.png", "")
- 
++
      # Write cache
      if ContentRequest not in cache.QueryCache:
          cache.QueryCache[ContentRequest] = {}
  
--    cache.QueryCache[ContentRequest][CacheId] = {'listings': ItemsListings, 'unsorted': Unsorted, 'node_id': Id, 'query': query, 'server_id': ServerId, 'parent_id': ParentId, 'library_id': LibraryId, 'content': Content, 'page_start': PageStartIndex if DynamicPage else 0, 'page_size': PageSize if DynamicPage else 0, 'page_has_next': PageHasNext}
+-    cache.QueryCache[ContentRequest][CacheId] = {'listings': ItemsListings, 'unsorted': Unsorted, 'node_id': Id, 'query': query, 'server_id': ServerId, 'parent_id': ParentId, 'library_id': LibraryId, 'content': Content}
 +    cache.QueryCache[ContentRequest][CacheId] = {'listings': ItemsListings, 'unsorted': Unsorted, 'server_sorted': DynamicPage, 'node_id': Id, 'query': query, 'server_id': ServerId, 'parent_id': ParentId, 'library_id': LibraryId, 'content': Content, 'page_start': PageStartIndex if DynamicPage else 0, 'page_size': PageSize if DynamicPage else 0, 'page_has_next': PageHasNext, 'request_params': RequestParams if DynamicPage else None, 'state': DynamicState if DynamicPage else {}, 'search_context': SearchContext if DynamicPage else '', 'search_type': SearchTypeContext if DynamicPage else ''}
  
--    if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported, PageStartIndex if DynamicPage else 0, PageSize if DynamicPage else None):
+-    if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported):
 +    if WindowIdCheck and reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported, PageStartIndex if DynamicPage else 0, PageSize if DynamicPage else None, DynamicState, SearchContext, SearchTypeContext):
          return
  
@@ -1030,15 +1027,21 @@ index 3d0fc44..2abdd19 100644
  
  # Workaround for invalid window query
  # check if video or music navigation window is open (MyVideoNav.xml MyMusicNav.xml) -> open MyPics.xml etc 10502 = music, 10025 = videos, 10002 = pictures
--def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported, StartIndex=0, PageSize=None):
+-def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported):
 +def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentId, LibraryId, ContentSupported, StartIndex=0, PageSize=None, State=None, SearchTermParam=None, SearchTypeParam=None):
      ReloadWindowId = ""
  
      if ContentRequest == "Photo" and WindowId in (10502, 10025):
-@@ -408,6 +639,14 @@ def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentI
-         if PageSize:
-             Params.update({'startindex': StartIndex, 'pagesize': PageSize})
- 
+@@ -355,7 +634,20 @@ def reload_Window(ContentRequest, WindowId, Handle, Id, query, ServerId, ParentI
+         xbmc.log(f"EMBY.helper.pluginmenu: Change of (browse) node content. Reload window: {ContentRequest} / {WindowId} / {ReloadWindowId}", 1) # LOGINFO
+         xbmcplugin.endOfDirectory(Handle, succeeded=True, cacheToDisc=False, updateListing=False)
+         xbmc.executebuiltin('Action(back)')
+-        utils.start_thread(utils.ActivateWindow, (ReloadWindowId, f"plugin://plugin.service.emby-next-gen/?id={Id}&mode=browse&query={query}&server={ServerId}&parentid={ParentId}&content={ContentRequest}&libraryid={LibraryId}&contentsupported={ContentSupported}"))
++        Params = {'id': Id, 'mode': 'browse', 'query': query, 'server': ServerId, 'parentid': ParentId, 'content': ContentRequest, 'libraryid': LibraryId, 'contentsupported': ContentSupported}
++
++        if PageSize:
++            Params.update({'startindex': StartIndex, 'pagesize': PageSize})
++
 +        if State:
 +            Params.update({Key: Value for Key, Value in State.items() if Value})
 +
@@ -1047,10 +1050,11 @@ index 3d0fc44..2abdd19 100644
 +            if SearchTypeParam:
 +                Params['searchtype'] = SearchTypeParam
 +
-         utils.start_thread(utils.ActivateWindow, (ReloadWindowId, f"plugin://plugin.service.emby-next-gen/?{urlencode(Params)}"))
++        utils.start_thread(utils.ActivateWindow, (ReloadWindowId, f"plugin://plugin.service.emby-next-gen/?{urlencode(Params)}"))
          return True
  
-@@ -493,7 +732,7 @@ def AddUser(EmbyServer):
+     return False
+@@ -440,7 +732,7 @@ def AddUser(EmbyServer):
          EmbyServer.remove_AdditionalUser(UserData['UserId'])
          utils.Dialog.notification(heading=utils.addon_name, message=f"{utils.Translate(33066)} {UserData['UserName']}", icon=utils.icon, time=utils.displayMessage, sound=False)
  
@@ -1059,7 +1063,7 @@ index 3d0fc44..2abdd19 100644
      if "ListItem" in Item:
          if utils.DebugLog: xbmc.log(f"EMBY.helper.pluginmenu (DEBUG): load_ListItem nodetype: Hybrid / {Item['Type']}", 1)
          ListItem = Item["ListItem"]
-@@ -521,6 +760,8 @@ def load_ListItem(ParentId, Item, ServerId, ItemsListings, Content, LibraryId, C
+@@ -468,6 +760,8 @@ def load_ListItem(ParentId, Item, ServerId, ItemsListings, Content, LibraryId, C
                      StaggeredQuery = "MusicVideo"
  
          params = {'id': Item['Id'], 'mode': 'browse', 'query': StaggeredQuery, 'server': ServerId, 'parentid': ParentId, 'content': Content, 'libraryid': LibraryId, 'contentsupported': ContentSupported}
@@ -1068,7 +1072,15 @@ index 3d0fc44..2abdd19 100644
          ItemsListings.append((f"plugin://plugin.service.emby-next-gen/?{urlencode(params)}", ListItem, True))
      else:
          if "ListItem" in Item:
-@@ -1503,18 +1744,27 @@ def DeleteThumbnails():
+@@ -495,6 +789,7 @@ def add_ListItem(ItemsListings, label, path, artwork, HelpText):
+     ListItem = xbmcgui.ListItem(label, HelpText, path, True)
+     ListItem.setContentLookup(False)
+     ListItem.setProperties({'IsFolder': 'true', 'IsPlayable': 'false'})
++    artwork = utils.add_image_user_agent(artwork)
+     ListItem.setArt({"thumb": artwork, "fanart": "special://home/addons/plugin.service.emby-next-gen/resources/fanart.jpg", "landscape": artwork or "special://home/addons/plugin.service.emby-next-gen/resources/fanart.jpg", "clearlogo": "special://home/addons/plugin.service.emby-next-gen/resources/clearlogo.png", "icon": artwork})
+ 
+     if HelpText == "Photo":
+@@ -1449,18 +1744,27 @@ def DeleteThumbnails():
      utils.close_ProgressBar("DeleteThumbnails")
      xbmc.log("EMBY.helper.pluginmenu: --<[ reset artwork ]", 1) # LOGINFO
  
@@ -1099,7 +1111,7 @@ index 3d0fc44..2abdd19 100644
          xbmcplugin.addSortMethod(Handle, xbmcplugin.SORT_METHOD_UNSORTED)
  
      for ContentType in (QueryContent, Content):
-@@ -1594,6 +1844,7 @@ def add_ViewItems(Handle, QueryContent, Content, ItemsListings, Unsorted):
+@@ -1540,6 +1844,7 @@ def add_ViewItems(Handle, QueryContent, Content, ItemsListings, Unsorted):
  
      if utils.DebugLog: xbmc.log("EMBY.helper.pluginmenu (DEBUG): Dynamic nodes: endOfDirectory", 1) # LOGDEBUG
      xbmcplugin.endOfDirectory(Handle, cacheToDisc=False, updateListing=False)
@@ -1107,7 +1119,7 @@ index 3d0fc44..2abdd19 100644
  
  def add_unifyedItem(Item, Doublesfilter, SortItems):
      ItemId = Item.get("Id", "")
-@@ -1609,7 +1860,7 @@ def add_unifyedItem(Item, Doublesfilter, SortItems):
+@@ -1555,7 +1860,7 @@ def add_unifyedItem(Item, Doublesfilter, SortItems):
      else:
          xbmc.log(f"EMBY.helper.pluginmenu: Invalid content: {Item['Type']}", 3) # LOGERROR
  
@@ -1116,7 +1128,7 @@ index 3d0fc44..2abdd19 100644
      TypeCounter = 0
  
      for SortItemContent, SortedItems in list(SortItems.items()):
-@@ -1628,7 +1879,7 @@ def unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId,
+@@ -1574,7 +1879,7 @@ def unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId,
              LocalCacheId = f"{Id}SORT{SortItemContent}{ParentId}{ServerId}{LibraryId}"
  
              for SortedItem in SortedItems:
@@ -1125,7 +1137,7 @@ index 3d0fc44..2abdd19 100644
  
              if SortItemContent not in cache.QueryCache:
                  cache.QueryCache[SortItemContent] = {}
-@@ -1646,7 +1897,7 @@ def unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId,
+@@ -1592,7 +1897,7 @@ def unify_Item(SortItems, ItemsListings, Content, ParentId, ServerId, LibraryId,
                      Content = SortItemContent
  
                  for SortedItem in SortedItems:
@@ -1135,13 +1147,16 @@ index 3d0fc44..2abdd19 100644
                  break
  
 diff --git a/vendor/emby-next-gen/helper/utils.py b/sources/emby-next-gen/helper/utils.py
-index 88a341f..09b29c6 100644
+index 2882467..09b29c6 100644
 --- a/vendor/emby-next-gen/helper/utils.py
 +++ b/sources/emby-next-gen/helper/utils.py
-@@ -23,6 +23,39 @@ addon_name = Addon.getAddonInfo('name')
- ClientName = "Infuse-Direct"
- ClientVersion = "8.0.4"
- ClientUserAgent = f"{ClientName}/{ClientVersion}"
+@@ -20,6 +20,42 @@ import xbmcgui
+ Addon = xbmcaddon.Addon("plugin.service.emby-next-gen")
+ addon_version = Addon.getAddonInfo('version')
+ addon_name = Addon.getAddonInfo('name')
++ClientName = "Infuse-Direct"
++ClientVersion = "8.0.4"
++ClientUserAgent = f"{ClientName}/{ClientVersion}"
 +
 +
 +def get_client_authorization(DeviceId, UserId="", AccessToken=""):
@@ -1178,8 +1193,80 @@ index 88a341f..09b29c6 100644
  CustomDialogParameters = (Addon.getAddonInfo('path'), "default", "1080i")
  WidgetsRefreshLock = threading.Lock()
  MappingIds = {"Trailer": "999999987", 'Season': "999999989", 'Series': "999999990", 'MusicAlbum': "999999991", 'MusicGenre': "999999992", "Studio": "999999994", "Tag": "999999993", "Genre": "999999995", "MusicArtist": "999999996"}
+@@ -65,6 +101,7 @@ enablehttp2 = False
+ MinimumSetup = ""
+ autoclose = 5
+ maxnodeitems = 25
++DynamicPageSize = 50
+ deviceName = "Kodi"
+ useDirectPaths = False
+ menuOptions = False
+@@ -300,6 +337,55 @@ NextGenOnline = threading.Event()
+ ProgressBars = [True, {}] # [ProgressbarsEnabled, {Header, Message, Value, ProgressBar}]
+ ProgressBarsLock = threading.Lock()
+ 
++def _split_url_options(Path):
++    if not isinstance(Path, str):
++        return Path, ""
++
++    PathData = Path.split("|", 1)
++    if len(PathData) == 1:
++        return PathData[0], ""
++
++    return PathData[0], PathData[1]
++
++def add_image_user_agent(Path):
++    """Add the Kodi HTTP User-Agent option to local Emby picture URLs."""
++    if not isinstance(Path, str) or not Path.startswith("http://127.0.0.1:57342/picture/"):
++        return Path
++
++    ImagePath, Options = _split_url_options(Path)
++    if "user-agent=" in Options.lower():
++        return Path
++
++    if Options:
++        return f"{ImagePath}|{Options}&User-Agent={ClientUserAgent}"
++
++    return f"{ImagePath}|User-Agent={ClientUserAgent}"
++
++def add_image_user_agent_to_artwork(Artwork):
++    """Apply the image protocol option while preserving artwork structures."""
++    if isinstance(Artwork, dict):
++        return {Key: add_image_user_agent_to_artwork(Value) for Key, Value in Artwork.items()}
++    if isinstance(Artwork, tuple):
++        return tuple(add_image_user_agent_to_artwork(Value) for Value in Artwork)
++    if isinstance(Artwork, list):
++        return [add_image_user_agent_to_artwork(Value) for Value in Artwork]
++
++    return add_image_user_agent(Artwork)
++
++def get_image_path_without_options(Path):
++    if not isinstance(Path, str) or not Path.startswith("http://127.0.0.1:57342/picture/"):
++        return Path
++
++    return _split_url_options(Path)[0]
++
++def add_image_path_suffix(Path, Suffix):
++    if not isinstance(Path, str) or not Path.startswith("http://127.0.0.1:57342/picture/"):
++        return f"{Path}{Suffix}"
++
++    ImagePath, Options = _split_url_options(Path)
++    ImagePath = f"{ImagePath}{Suffix}"
++    return f"{ImagePath}|{Options}" if Options else ImagePath
++
+ # Progress bars
+ def create_ProgressBar(TaskId, Header, Message):
+     with SafeLock(ProgressBarsLock):
+@@ -1022,6 +1108,7 @@ def InitSettings():
+     load_settings_int('displayMessage')
+     load_settings_int('newContentTime')
+     load_settings_int('maxnodeitems')
++    load_settings_int('DynamicPageSize')
+     load_settings_int('videoBitrate')
+     load_settings_int('audioBitrate')
+     load_settings_int('startupDelay')
 diff --git a/vendor/emby-next-gen/hooks/webservice.py b/sources/emby-next-gen/hooks/webservice.py
-index 8465d13..b44a53f 100644
+index 146bf85..b44a53f 100644
 --- a/vendor/emby-next-gen/hooks/webservice.py
 +++ b/sources/emby-next-gen/hooks/webservice.py
 @@ -363,7 +363,9 @@ def worker_Query(WorkerNumber):  # thread by caller
@@ -1211,7 +1298,7 @@ index 8465d13..b44a53f 100644
                          continue
  
                  if query:
--                    pluginmenu.browse(Handle, params.get('id'), query, params.get('parentid'), params.get('content'), ServerId, params.get('libraryid'), params.get('contentsupported', ""), params.get('startindex', 0), params.get('pagesize'))
+-                    pluginmenu.browse(Handle, params.get('id'), query, params.get('parentid'), params.get('content'), ServerId, params.get('libraryid'), params.get('contentsupported', ""))
 +                    SearchTermParam = params.get('searchterm') if query == 'Search' else None
 +                    SearchTypeParam = params.get('searchtype') if query == 'Search' else None
 +                    if query == 'Search' and utils.DebugLog:
@@ -1412,15 +1499,25 @@ index 3be35ed..bd1bccf 100644
 +msgid "Apply"
 +msgstr "应用"
 diff --git a/vendor/emby-next-gen/resources/settings.xml b/sources/emby-next-gen/resources/settings.xml
-index 5c849c0..5e6616d 100644
+index 5e2d575..5e6616d 100644
 --- a/vendor/emby-next-gen/resources/settings.xml
 +++ b/sources/emby-next-gen/resources/settings.xml
-@@ -2059,7 +2059,7 @@
+@@ -2059,6 +2059,18 @@
                          <popup>false</popup>
                      </control>
                  </setting>
--                <setting id="DynamicPageSize" type="integer" label="Dynamic page size" help="Number of items loaded per Dynamic page">
 +                <setting id="DynamicPageSize" type="integer" label="33861" help="33862">
-                     <level>3</level>
-                     <default>50</default>
-                     <constraints>
++                    <level>3</level>
++                    <default>50</default>
++                    <constraints>
++                        <minimum>25</minimum>
++                        <step>25</step>
++                        <maximum>250</maximum>
++                    </constraints>
++                    <control type="slider" format="integer">
++                        <popup>false</popup>
++                    </control>
++                </setting>
+             </group>
+             <group id="7" label="33645">
+                 <setting label="30249" id="connectMsg" type="boolean" help="">
