@@ -7,7 +7,7 @@ on:
         description: Type RELEASE to deploy
         required: true
   push:
-    tags: ['release-*']
+    branches: [main]
 
 permissions:
   contents: read
@@ -20,7 +20,10 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'push' || github.event.inputs.release == 'RELEASE'
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      startsWith(github.event.head_commit.message, 'release:')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.release == 'RELEASE')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
