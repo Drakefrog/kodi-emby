@@ -34,8 +34,9 @@ Use this sequence for every release:
    release commit and version in the change log or release notes.
 
 The workflow also keeps `workflow_dispatch` as an emergency/manual fallback.
-Enter exactly `RELEASE` in its required input, and run it only after checking
-out the intended `main` state. Ordinary commits on `main` do not deploy.
+Select `main`, enter exactly `RELEASE` in its required input, and start the
+run. Manual runs from any other ref are rejected by the job condition.
+Ordinary commits on `main` do not deploy.
 `release-*` tags are retained as historical version and rollback references,
 but pushing a tag does not trigger Pages deployment.
 
