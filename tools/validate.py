@@ -8,7 +8,7 @@ def main():
     p=argparse.ArgumentParser(); p.add_argument("--sources-only",action="store_true"); a=p.parse_args()
     versions=json.loads((ROOT/"versions.json").read_text())
     for addon_id,e in versions.items():
-        root=ET.parse(ROOT/e["source"]/"addon.xml").getroot(); assert root.attrib["id"]==addon_id
+        root=ET.parse(ROOT/e["source"]/"addon.xml").getroot(); assert root.attrib["id"]==addon_id; assert root.attrib["version"]==e["upstream_version"], f"{addon_id}: update versions.json with source addon.xml"
         assert numeric(e["upstream_version"]+"."+str(e["custom_revision"]))
     if a.sources_only: return
     rows=ET.parse(ROOT/"dist/addons.xml").getroot(); found={x.attrib["id"]:x.attrib["version"] for x in rows}
@@ -19,4 +19,6 @@ def main():
             names=f.namelist(); assert all(n.startswith(addon_id+"/") for n in names); assert not any("/.git/" in n or "/.github/" in n or "/tests/" in n or "__pycache__" in n or n.endswith(".pyc") or "backup" in n.lower() for n in names)
             xml=ET.fromstring(f.read(addon_id+"/addon.xml")); assert xml.attrib["id"]==addon_id and xml.attrib["version"]==v
     assert (ROOT/"dist/addons.xml.md5").read_text().strip()
+    rollback=json.loads((ROOT/"dist/rollback.json").read_text())
+    for addon_id,e in versions.items(): assert f"{addon_id}-{e['upstream_version']}.{e['custom_revision']}.zip" in rollback[addon_id]
 if __name__=="__main__": main()

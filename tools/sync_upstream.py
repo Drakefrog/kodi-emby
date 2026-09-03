@@ -7,6 +7,7 @@ review, and exits non-zero.
 """
 import argparse, json, shutil, subprocess, tempfile
 from pathlib import Path
+from xml.etree import ElementTree as ET
 ROOT=Path(__file__).resolve().parents[1]
 def run(*args, cwd=None): return subprocess.run(args,cwd=cwd,text=True,capture_output=True)
 def main():
@@ -35,9 +36,33 @@ def main():
   # `git diff --no-index` otherwise embeds the random temporary directory.
   body=d.stdout.replace(str(pure).encode(),meta['vendor'].encode()).replace(str(staged).encode(),meta['source'].encode())
   new_patch.write_bytes(body)
-  shutil.rmtree(old_vendor); shutil.copytree(pure,old_vendor)
-  shutil.rmtree(old_source); shutil.copytree(staged,old_source)
-  queue=ROOT/meta['patches']; shutil.rmtree(queue); queue.mkdir(); shutil.copy2(new_patch,queue/'0001-customizations.patch')
-  allmeta=json.loads((ROOT/'upstreams.json').read_text()); allmeta[a.component]['upstream_commit']=tip; (ROOT/'upstreams.json').write_text(json.dumps(allmeta,indent=2)+'\n')
-  (ROOT/'UPSTREAM_SYNC_REPORT.md').write_text(f'# Upstream sync prepared\n\n- {a.component}: `{meta["upstream_commit"]}` → `{tip}`\n- Patch queue replayed cleanly; review vendor, sources and patches before merge.\n')
+  # Assemble every replacement before touching canonical paths.  Rename is
+  # atomic per path; the backup is retained until all replacements succeed.
+  txn=ROOT/'.sync-transaction'; backup=ROOT/'.sync-backup'
+  if txn.exists(): shutil.rmtree(txn)
+  if backup.exists(): raise RuntimeError('existing .sync-backup: recover or remove it first')
+  (txn/'vendor').parent.mkdir(parents=True); shutil.copytree(pure,txn/'vendor')
+  shutil.copytree(staged,txn/'source'); (txn/'patches').mkdir(); shutil.copy2(new_patch,txn/'patches'/'0001-customizations.patch')
+  allmeta=json.loads((ROOT/'upstreams.json').read_text()); allmeta[a.component]['upstream_commit']=tip; (txn/'upstreams.json').write_text(json.dumps(allmeta,indent=2)+'\n')
+  versions=json.loads((ROOT/'versions.json').read_text())
+  for addon_id,entry in versions.items():
+   if entry['source'] == meta['source']:
+    upstream_version=ET.parse(staged/'addon.xml').getroot().attrib['version']
+    if len(upstream_version.split('.')) != 3 or not all(x.isdigit() for x in upstream_version.split('.')): raise ValueError(f'{addon_id}: unsupported upstream version {upstream_version}')
+    entry['upstream_version']=upstream_version
+  (txn/'versions.json').write_text(json.dumps(versions,indent=2)+'\n')
+  (txn/'UPSTREAM_SYNC_REPORT.md').write_text(f'# Upstream sync prepared\n\n- {a.component}: `{meta["upstream_commit"]}` → `{tip}`\n- Patch queue replayed cleanly; review vendor, sources and patches before merge.\n')
+  queue=ROOT/meta['patches']; backup.mkdir()
+  paths=[(old_vendor,txn/'vendor'),(old_source,txn/'source'),(queue,txn/'patches'),(ROOT/'upstreams.json',txn/'upstreams.json'),(ROOT/'versions.json',txn/'versions.json'),(ROOT/'UPSTREAM_SYNC_REPORT.md',txn/'UPSTREAM_SYNC_REPORT.md')]
+  moved=[]
+  try:
+   for old,new in paths:
+    if old.exists(): old.rename(backup/old.name)
+    new.rename(old); moved.append((old,backup/old.name))
+  except Exception:
+   for old,prior in reversed(moved):
+    if old.exists(): shutil.rmtree(old) if old.is_dir() else old.unlink()
+    if prior.exists(): prior.rename(old)
+   raise
+  shutil.rmtree(backup); shutil.rmtree(txn)
 if __name__=='__main__': main()

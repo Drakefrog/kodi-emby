@@ -20,7 +20,7 @@ def main():
     versions=json.loads((ROOT/"versions.json").read_text())
     with tempfile.TemporaryDirectory(dir=ROOT) as td:
         out=Path(td)/"dist"; out.mkdir()
-        rows=[]
+        rows=[]; rollback={}
         for addon_id, entry in versions.items():
             source=ROOT/entry["source"]; addon_xml=source/"addon.xml"; root=ET.parse(addon_xml).getroot()
             if root.attrib["id"] != addon_id: raise ValueError(f"{source}: id mismatch")
@@ -35,10 +35,21 @@ def main():
                 for p in stage.rglob("*"):
                     if p.is_file() and allowed(p.relative_to(stage)): z.write(p, p.relative_to(stage.parent))
             rows.append(root)
+            # Preserve a directly-installable previous archive, if a prior
+            # build exists. Kodi's master XML advertises one current version
+            # per unique id; rollback.json is the explicit manual rollback
+            # index rather than ambiguous duplicate addon entries.
+            prior=ROOT/"dist"/addon_id
+            retained=[]
+            if prior.exists():
+                for old in prior.glob(f"{addon_id}-*.zip"):
+                    if old.name != archive.name: shutil.copy2(old,target/old.name); retained.append(old.name)
+            rollback[addon_id]=[archive.name]+sorted(retained,reverse=True)[:1]
         addons=ET.Element("addons")
         for row in sorted(rows,key=lambda x:x.attrib["id"]): addons.append(row)
         ET.indent(addons); ET.ElementTree(addons).write(out/"addons.xml",encoding="utf-8",xml_declaration=True)
         (out/"addons.xml.md5").write_text(hashlib.md5((out/"addons.xml").read_bytes()).hexdigest()+"\n")
+        (out/"rollback.json").write_text(json.dumps(rollback,indent=2,sort_keys=True)+"\n")
         dest=ROOT/"dist"; backup=ROOT/".dist-previous"
         if backup.exists(): shutil.rmtree(backup)
         if dest.exists(): dest.rename(backup)

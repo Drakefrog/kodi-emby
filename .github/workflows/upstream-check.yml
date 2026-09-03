@@ -18,10 +18,16 @@ jobs:
           if grep -q '→' UPSTREAM_SYNC_REPORT.md; then
             branch="automation/upstream-$(date +%Y%m%d)"
             git checkout -b "$branch"
-            make sync-emby-next-gen sync-embycon sync-arctic-fuse-3
+            if grep -q 'emby-next-gen:' UPSTREAM_SYNC_REPORT.md; then make sync-emby-next-gen; fi
+            if grep -q 'embycon:' UPSTREAM_SYNC_REPORT.md; then make sync-embycon; fi
+            if grep -q 'arctic-fuse-3:' UPSTREAM_SYNC_REPORT.md; then make sync-arctic-fuse-3; fi
             make build test
             git add upstreams.json vendor sources patches UPSTREAM_SYNC_REPORT.md
             git -c user.name=github-actions[bot] -c user.email=41898282+github-actions[bot] commit -m 'chore: prepare upstream sync'
             git push origin "$branch"
             gh pr create --base main --head "$branch" --title 'chore: review upstream sync' --body-file UPSTREAM_SYNC_REPORT.md || true
           fi
+      - name: Publish sync diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: {name: upstream-sync-report, path: 'UPSTREAM_SYNC_REPORT.md', if-no-files-found: warn}

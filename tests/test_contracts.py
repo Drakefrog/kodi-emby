@@ -9,6 +9,8 @@ class RepositoryContracts(unittest.TestCase):
   for addon,entry in self.versions.items():
    version=entry['upstream_version']+'.'+str(entry['custom_revision']); path=ROOT/'dist'/addon/f'{addon}-{version}.zip'
    self.assertTrue(path.is_file(),path); self.assertFalse((ROOT/'dist'/addon/version).exists())
+  rollback=json.loads((ROOT/'dist/rollback.json').read_text())
+  self.assertTrue(all(rollback[a][0].endswith('.zip') for a in self.versions))
  def test_zip_identity_root_version_and_exclusions(self):
   for addon,entry in self.versions.items():
    version=entry['upstream_version']+'.'+str(entry['custom_revision']); archive=ROOT/'dist'/addon/f'{addon}-{version}.zip'
@@ -27,4 +29,8 @@ class RepositoryContracts(unittest.TestCase):
   self.assertTrue((ROOT/'sources/emby-next-gen/LICENSE.txt').is_file()); self.assertTrue((ROOT/'sources/arctic-fuse-3/LICENSE.txt').is_file())
   embycon=(ROOT/'sources/embycon/plugin.video.embycon/resources/lib/detail_routes.py').read_text(); fuse=(ROOT/'sources/arctic-fuse-3/shortcuts/skinvariables-shortcut-searchwidgets.json').read_text()
   self.assertIn('OPEN_DETAIL',embycon); self.assertIn('plugin.video.embycon',fuse)
+ def test_embycon_patch_queue_has_no_line_ending_churn(self):
+  patch=(ROOT/'patches/embycon/0001-customizations.patch').read_text(); files=[line for line in patch.splitlines() if line.startswith('diff --git')]
+  self.assertLessEqual(len(files),15); self.assertLess(len(patch.splitlines()),2000)
+  self.assertNotIn('\r\n',patch)
 if __name__=='__main__': unittest.main()
