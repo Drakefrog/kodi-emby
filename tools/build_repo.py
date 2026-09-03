@@ -44,6 +44,8 @@ def main():
             if prior.exists():
                 for old in prior.glob(f"{addon_id}-*.zip"):
                     if old.name != archive.name: shutil.copy2(old,target/old.name); retained.append(old.name)
+            for candidate in target.glob("*.zip"):
+                (target/(candidate.name+".sha256")).write_text(hashlib.sha256(candidate.read_bytes()).hexdigest()+"\n")
             rollback[addon_id]=[archive.name]+sorted(retained,reverse=True)[:1]
         addons=ET.Element("addons")
         for row in sorted(rows,key=lambda x:x.attrib["id"]): addons.append(row)

@@ -9,6 +9,9 @@ class RepositoryContracts(unittest.TestCase):
   for addon,entry in self.versions.items():
    version=entry['upstream_version']+'.'+str(entry['custom_revision']); path=ROOT/'dist'/addon/f'{addon}-{version}.zip'
    self.assertTrue(path.is_file(),path); self.assertFalse((ROOT/'dist'/addon/version).exists())
+  for path in (ROOT/'dist').rglob('*.zip'):
+   sidecar=path.with_name(path.name+'.sha256'); self.assertTrue(sidecar.is_file(),sidecar)
+   self.assertEqual(sidecar.read_text(),hashlib.sha256(path.read_bytes()).hexdigest()+'\n')
   rollback=json.loads((ROOT/'dist/rollback.json').read_text())
   self.assertTrue(all(rollback[a][0].endswith('.zip') for a in self.versions))
  def test_zip_identity_root_version_and_exclusions(self):
