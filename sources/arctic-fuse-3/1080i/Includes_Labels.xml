@@ -1193,13 +1193,13 @@
     </variable>
 
     <variable name="Label_Overlay_1114_PlotBox">
-        <value condition="String.IsEqual(Window.Property(emby_source),emby)">$INFO[Window(Home).Property(emby_person_textbox)]</value>
+        <value condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">$INFO[Window(Home).Property(emby_person_textbox)]</value>
         <value condition="Container(7000).IsUpdating | String.IsEmpty(Window.Property(tmdb_type)) | String.IsEmpty(Window.Property(tmdb_id)) | Integer.IsEqual(Container(7000).NumItems,0)">$INFO[Window.Property(textbox)]</value>
         <value>$VAR[Label_PlotBox_C7000]</value>
     </variable>
 
     <variable name="Label_Overlay_Header_1114_PlotBox">
-        <value condition="String.IsEqual(Window.Property(emby_source),emby)">$INFO[Window(Home).Property(emby_person_header)]</value>
+        <value condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">$INFO[Window(Home).Property(emby_person_header)]</value>
         <value condition="!String.IsEmpty(Window.Property(Header))">$INFO[Window.Property(Header)]</value>
         <value>$LOCALIZE[19033]</value>
     </variable>

@@ -32,6 +32,11 @@ class RepositoryContracts(unittest.TestCase):
   self.assertTrue((ROOT/'sources/emby-next-gen/LICENSE.txt').is_file()); self.assertTrue((ROOT/'sources/arctic-fuse-3/LICENSE.txt').is_file())
   embycon=(ROOT/'sources/embycon/plugin.video.embycon/resources/lib/detail_routes.py').read_text(); fuse=(ROOT/'sources/arctic-fuse-3/shortcuts/skinvariables-shortcut-searchwidgets.json').read_text()
   self.assertIn('OPEN_DETAIL',embycon); self.assertIn('plugin.video.embycon',fuse)
+ def test_recommendation_dialog_does_not_use_person_text(self):
+  root=ET.parse(ROOT/'sources/arctic-fuse-3/1080i/Includes_Labels.xml').getroot(); names={'Label_Overlay_1114_PlotBox','Label_Overlay_Header_1114_PlotBox'}
+  conditions=[next(v.attrib['condition'] for v in variable if v.attrib.get('condition')) for variable in root.findall('variable') if variable.attrib['name'] in names]
+  expected='String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))'
+  self.assertEqual(conditions,[expected,expected])
  def test_helper_provenance_and_service_dependency_closure(self):
   helper=json.loads((ROOT/'helpers.json').read_text())['plugin.video.emby-next-gen']; self.assertEqual(len(helper['sha256']),64); self.assertTrue(helper['source_url'].startswith('https://'))
   helper_xml=ET.parse(ROOT/'sources/plugin.video.emby-next-gen/addon.xml').getroot(); service_req=next(x.attrib['version'] for x in helper_xml.find('requires') if x.attrib['addon']=='plugin.service.emby-next-gen')
