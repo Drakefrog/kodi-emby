@@ -318,16 +318,6 @@
         <value>special://skin/extras/playlists/Null.xsp</value>
     </variable>
 
-    <variable name="Path_VideoInfo_EmbyPersonMovies">
-        <value condition="String.IsEqual(ListItem.Property(person_source),emby) + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=&amp;media_type=movies]</value>
-        <value>special://skin/extras/playlists/Null.xsp</value>
-    </variable>
-
-    <variable name="Path_VideoInfo_EmbyPersonTV">
-        <value condition="String.IsEqual(ListItem.Property(person_source),emby) + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=&amp;media_type=tvshows]</value>
-        <value>special://skin/extras/playlists/Null.xsp</value>
-    </variable>
-
     <variable name="Path_VideoInfo_OnlineCollection">
         <value condition="String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.Set.TMDb_ID))">special://skin/extras/playlists/Null.xsp</value>
         <value condition="String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.DBType))">special://skin/extras/playlists/Null.xsp</value>

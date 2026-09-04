@@ -45,7 +45,9 @@ class RepositoryContracts(unittest.TestCase):
   for value in ('setMediaType("video")','"tmdb_type": "person"','"person_source": "emby"','"birthday": fields["birthday"][:10]','"gender": fields["gender"]','xbmcgui.Dialog().info(list_item)'): self.assertIn(value,routes)
   for mode in ('SHOW_PERSON','OPEN_PERSON'): self.assertIn(mode,functions)
   self.assertIn('mode=OPEN_PERSON&amp;person_id=$INFO[Window.Property(emby_person_id)]',plot)
-  self.assertIn('mode=NEW_SEARCH_PERSON&amp;person_id=,&amp;media_type=crew',info)
+  for media_type in ('movies','tvshows','crew'): self.assertIn(f'mode=NEW_SEARCH_PERSON&amp;person_id=,&amp;media_type={media_type}',info)
+  paths=(ROOT/'sources/arctic-fuse-3/1080i/Includes_Paths.xml').read_text()
+  self.assertNotIn('Path_VideoInfo_EmbyPersonMovies',paths); self.assertNotIn('Path_VideoInfo_EmbyPersonTV',paths)
   self.assertIn('info=crew_in_both&amp;tmdb_type=person',info)
  def test_helper_provenance_and_service_dependency_closure(self):
   helper=json.loads((ROOT/'helpers.json').read_text())['plugin.video.emby-next-gen']; self.assertEqual(len(helper['sha256']),64); self.assertTrue(helper['source_url'].startswith('https://'))

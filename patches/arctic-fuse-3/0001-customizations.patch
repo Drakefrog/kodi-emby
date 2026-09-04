@@ -224,7 +224,7 @@ index 0903a67..ba5829c 100644
              <param name="id">7000</param>
              <content limit="1">$INFO[Window.Property(tmdb_id),plugin://plugin.video.themoviedb.helper/?info=details&amp;tmdb_id=,]$INFO[Window.Property(tmdb_type),&amp;tmdb_type=,]</content>
          </include>
- 
+
 +        <!-- Emby people are intentionally isolated from TMDb's detail provider. -->
 +        <include content="Object_Hidden_List" condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window(Home).Property(emby_person_id)) + !String.IsEmpty(Window(Home).Property(emby_person_pending))">
 +            <param name="id">7002</param>
@@ -237,7 +237,7 @@ index 0903a67..ba5829c 100644
 @@ -44,7 +62,7 @@
              <param name="include_artwork">true</param>
          </include>
- 
+
 -        <include content="Furniture_Busy" condition="!String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id)) + String.IsEmpty(Window.Property(textbox))">
 +        <include content="Furniture_Busy" condition="[!String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id)) + String.IsEmpty(Window.Property(textbox))] | [String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window(Home).Property(emby_person_pending))]">
              <param name="hasspinner">true</param>
@@ -250,7 +250,7 @@ index 0903a67..ba5829c 100644
 -            <param name="visible">[[!Window.IsActive(DialogVolumeBar.xml) | Player.Muted] + !String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id)) + [Container(7000).IsUpdating | [Container(7001).IsUpdating + !String.IsEmpty(Window.Property(ModePath))]]]</param>
 +            <param name="visible">[[!Window.IsActive(DialogVolumeBar.xml) | Player.Muted] + [[!String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id)) + [Container(7000).IsUpdating | [Container(7001).IsUpdating + !String.IsEmpty(Window.Property(ModePath))]]] | [String.IsEqual(Window.Property(emby_source),emby) + [Container(7002).IsUpdating | !String.IsEmpty(Window(Home).Property(emby_person_pending))]]]]</param>
          </include>
- 
+
      </controls>
 -</window>
 \ No newline at end of file
@@ -284,9 +284,9 @@ index 1fa5a23..f45b957 100644
                              </include>
 -                            <include condition="$PARAM[include_artwork] + !String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id))">DialogCustomPlot_Lists</include>
 +                            <include condition="$PARAM[include_artwork] + [[!String.IsEmpty(Window.Property(tmdb_type)) + !String.IsEmpty(Window.Property(tmdb_id))] | [String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))]]">DialogCustomPlot_Lists</include>
- 
+
                              <include condition="!String.IsEmpty(Window.Property(path))">DialogCustomPlot_Switcher</include>
- 
+
 @@ -159,6 +159,7 @@
                      <onleft>9000</onleft>
                      <onup>9000</onup>
@@ -353,7 +353,7 @@ index 660712f..97dc899 100644
 +++ b/sources/arctic-fuse-3/1080i/Includes_Actions.xml
 @@ -31,6 +31,12 @@
      </include>
- 
+
      <variable name="Action_DialogInfo_PlayMedia">
 +        <!-- Prefer the authenticated EmbyCon playback path for Emby items. -->
 +        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + String.IsEqual(ListItem.Property(ItemType),Movie) + !String.IsEmpty(ListItem.Property(id))">RunScript(plugin.video.embycon,0,?mode=PLAY&amp;item_id=$INFO[ListItem.Property(id)])</value>
@@ -363,14 +363,14 @@ index 660712f..97dc899 100644
 +
          <!-- Play FileNameAndPath -->
          <value condition="!String.IsEmpty(ListItem.FileNameAndPath) + !$EXP[Exp_IsFolder]">RunScript(plugin.video.themoviedb.helper,close_dialog=1190,"playmedia=$INFO[ListItem.FileNameAndPath]")</value>
- 
+
 @@ -356,7 +362,6 @@
          <value condition="Skin.String(CustomRating.Movies.Item01,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
          <value condition="Skin.String(CustomRating.Movies.Item01,MDBList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
          <value condition="Skin.String(CustomRating.Movies.Item01,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 -        <value condition="Skin.String(CustomRating.Movies.Item01,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
          <value condition="Skin.String(CustomRating.Movies.Item01,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
- 
+
          <value condition="Skin.String(CustomRating.Movies.Item02,TMDb)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 @@ -367,7 +372,6 @@
          <value condition="Skin.String(CustomRating.Movies.Item02,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
@@ -378,7 +378,7 @@ index 660712f..97dc899 100644
          <value condition="Skin.String(CustomRating.Movies.Item02,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 -        <value condition="Skin.String(CustomRating.Movies.Item02,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
          <value condition="Skin.String(CustomRating.Movies.Item02,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
- 
+
          <value condition="Skin.String(CustomRating.TVShows.Item01,TMDb)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 @@ -378,7 +382,6 @@
          <value condition="Skin.String(CustomRating.TVShows.Item01,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
@@ -386,7 +386,7 @@ index 660712f..97dc899 100644
          <value condition="Skin.String(CustomRating.TVShows.Item01,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 -        <value condition="Skin.String(CustomRating.TVShows.Item01,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
          <value condition="Skin.String(CustomRating.TVShows.Item01,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
- 
+
          <value condition="Skin.String(CustomRating.TVShows.Item02,TMDb)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 @@ -389,7 +392,6 @@
          <value condition="Skin.String(CustomRating.TVShows.Item02,RottenTomatoesUser)">Skin.Reset(TMDbHelper.DisableRatings)</value>
@@ -394,10 +394,10 @@ index 660712f..97dc899 100644
          <value condition="Skin.String(CustomRating.TVShows.Item02,Letterboxd)">Skin.Reset(TMDbHelper.DisableRatings)</value>
 -        <value condition="Skin.String(CustomRating.TVShows.Item02,MyAnimeList)">Skin.Reset(TMDbHelper.DisableRatings)</value>
          <value condition="Skin.String(CustomRating.TVShows.Item02,Awards)">Skin.Reset(TMDbHelper.DisableRatings)</value>
- 
+
          <value>Skin.SetBool(TMDbHelper.DisableRatings)</value>
 diff --git a/vendor/arctic-fuse-3/1080i/Includes_DialogInfo.xml b/sources/arctic-fuse-3/1080i/Includes_DialogInfo.xml
-index 35575a3..a47677e 100644
+index 35575a3..15733f3 100644
 --- a/vendor/arctic-fuse-3/1080i/Includes_DialogInfo.xml
 +++ b/sources/arctic-fuse-3/1080i/Includes_DialogInfo.xml
 @@ -321,7 +321,8 @@
@@ -405,7 +405,7 @@ index 35575a3..a47677e 100644
              <param name="altvisible">true</param>
              <onfocus>SetProperty(CurrentID,$INFO[Window.Property(BaseID)])</onfocus>
 -            <content>$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_movies&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
-+            <content condition="String.IsEqual(ListItem.Property(person_source),emby)">$VAR[Path_VideoInfo_EmbyPersonMovies]</content>
++            <content condition="String.IsEqual(ListItem.Property(person_source),emby)">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=,&amp;media_type=movies]</content>
 +            <content condition="String.IsEmpty(ListItem.Property(person_source))">$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_movies&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
              <include>DialogInfo_Widgets_Action</include>
          </include>
@@ -415,7 +415,7 @@ index 35575a3..a47677e 100644
              <param name="altvisible">!String.IsEqual(Window.Property(CurrentID),Window.Property(BaseID))</param>
              <onfocus>SetProperty(CurrentID,$INFO[Window.Property(BaseID)])</onfocus>
 -            <content>$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_tvshows&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
-+            <content condition="String.IsEqual(ListItem.Property(person_source),emby)">$VAR[Path_VideoInfo_EmbyPersonTV]</content>
++            <content condition="String.IsEqual(ListItem.Property(person_source),emby)">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=,&amp;media_type=tvshows]</content>
 +            <content condition="String.IsEmpty(ListItem.Property(person_source))">$INFO[ListItem.UniqueID(tmdb),plugin://plugin.video.themoviedb.helper/?info=stars_in_tvshows&amp;tmdb_type=person&amp;tmdb_id=,&amp;limit=250&amp;sort_by=premiered&amp;nextpage=false&amp;cacheonly=true&amp;length=1&amp;exclude_key=genre&amp;exclude_value=Documentary / News / Talk]</content>
              <include>DialogInfo_Widgets_Action</include>
          </include>
@@ -432,7 +432,7 @@ index 35575a3..a47677e 100644
 
 @@ -366,7 +369,7 @@
      <include name="DialogInfo_VideoWidgets">
- 
+
          <!-- Cast-->
 -        <include content="Widget_Info_Row" condition="![!Skin.HasSetting(Info.UseLocalCast) + $EXP[Exp_TMDbHelper_IsData]]">
 +        <include content="Widget_Info_Row" condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)]">
@@ -468,7 +468,7 @@ index 35575a3..a47677e 100644
              <param name="basegroupid">51</param>
 @@ -474,7 +494,7 @@
          </include>
- 
+
          <!-- Seasons and Episodes -->
 -        <include content="Widget_Info_Row" condition="!Skin.HasSetting(VideoInfo.Widgets.DisableSeasons) + [String.IsEqual(ListItem.DBType,tvshow) | String.IsEqual(ListItem.DBType,season) | String.IsEqual(ListItem.DBType,episode)] + $EXP[Exp_TMDbHelper_IsData]">
 +        <include content="Widget_Info_Row" condition="!Skin.HasSetting(VideoInfo.Widgets.DisableSeasons) + [[[String.IsEqual(ListItem.DBType,tvshow) | String.IsEqual(ListItem.DBType,season) | String.IsEqual(ListItem.DBType,episode)] + $EXP[Exp_TMDbHelper_IsData]] | [!String.IsEmpty(ListItem.Property(emby_details)) + String.IsEqual(ListItem.Property(ItemType),Series)]]">
@@ -477,7 +477,7 @@ index 35575a3..a47677e 100644
              <param name="basegroupid">51</param>
 @@ -788,7 +808,24 @@
          </include>
- 
+
          <!-- Recommendations -->
 -        <include content="Widget_Info_Row" condition="!Skin.HasSetting(VideoInfo.Widgets.DisableRecommendations) + $EXP[Exp_TMDbHelper_IsData]">
 +        <include content="Widget_Info_Row" condition="!String.IsEmpty(ListItem.Property(emby_details)) + !Skin.HasSetting(VideoInfo.Widgets.DisableRecommendations) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)]">
@@ -509,7 +509,7 @@ index 35575a3..a47677e 100644
 +            <include condition="Window.IsVisible(DialogVideoInfo.xml) + ![Skin.HasSetting(VideoInfo.Widgets.DisableOnlineGallery) | !$EXP[Exp_TMDbHelper_IsData]] + String.IsEqual(ListItem.Property(tmdb_type),person) + String.IsEmpty(ListItem.Property(person_source))">DialogInfo_PersonImageContent</include>
          </include>
      </include>
- 
+
 @@ -1014,9 +1051,38 @@
              <onclick>SetProperty(clearlogo,$VAR[Image_Clearlogo_Container],1114)</onclick>
              <onclick>SetProperty(tmdb_id,$INFO[Container.ListItem.Property(tmdb_id)],1114)</onclick>
@@ -552,7 +552,7 @@ index 35575a3..a47677e 100644
 @@ -1027,6 +1093,13 @@
          </definition>
      </include>
- 
+
 +    <!-- Kept as a named hook for future Emby-backed detail navigation. -->
 +    <include name="DialogInfo_EmbyDetails_Action">
 +        <definition>
@@ -570,20 +570,20 @@ index 35575a3..a47677e 100644
 +                        <onclick condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)]">Dialog.Close(1190)</onclick>
                          <onclick>$VAR[Action_DialogInfo_PlayMedia]</onclick>
                      </include>
- 
+
 diff --git a/vendor/arctic-fuse-3/1080i/Includes_Expressions.xml b/sources/arctic-fuse-3/1080i/Includes_Expressions.xml
 index c387354..baadc00 100644
 --- a/vendor/arctic-fuse-3/1080i/Includes_Expressions.xml
 +++ b/sources/arctic-fuse-3/1080i/Includes_Expressions.xml
 @@ -128,7 +128,7 @@
- 
+
      <expression name="Exp_OSD_DelayInfo_Timing">[[System.IdleTime(3)] | [System.IdleTime(2) + Skin.String(OSD.AutoOnPause.Delay,2s)] | [System.IdleTime(1) + Skin.String(OSD.AutoOnPause.Delay,1s)] | [System.IdleTime(0) + Skin.String(OSD.AutoOnPause.Delay,0s)]]</expression>
- 
+
 -    <expression name="Exp_OSD_DelayInfo">[$EXP[Exp_OSD_DelayInfo_Timing] + Skin.String(OSD.AutoOnPause,Info) + Player.Paused + !$EXP[Exp_InfoDialogs]]</expression>
 +    <expression name="Exp_OSD_DelayInfo">[$EXP[Exp_OSD_DelayInfo_Timing] + Skin.String(OSD.AutoOnPause,Info) + Player.Paused]</expression>
- 
+
      <expression name="Exp_OSD_QuickInfo">[$EXP[Exp_OSD_PVRChannelSwitch] | Window.IsActive(fullscreeninfo) | $EXP[Exp_OSD_DelayInfo]]</expression>
- 
+
 diff --git a/vendor/arctic-fuse-3/1080i/Includes_Images.xml b/sources/arctic-fuse-3/1080i/Includes_Images.xml
 index 3074680..a7fe40d 100644
 --- a/vendor/arctic-fuse-3/1080i/Includes_Images.xml
@@ -595,7 +595,7 @@ index 3074680..a7fe40d 100644
 +        <value condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">$INFO[Window(Home).Property(emby_person_poster)]</value>
          <value>$INFO[Window.Property(poster)]</value>
      </variable>
- 
+
 diff --git a/vendor/arctic-fuse-3/1080i/Includes_Info.xml b/sources/arctic-fuse-3/1080i/Includes_Info.xml
 index 3eee73b..13823fa 100644
 --- a/vendor/arctic-fuse-3/1080i/Includes_Info.xml
@@ -613,20 +613,20 @@ index 3eee73b..13823fa 100644
 -            </include>
          </definition>
      </include>
- 
+
 diff --git a/vendor/arctic-fuse-3/1080i/Includes_Labels.xml b/sources/arctic-fuse-3/1080i/Includes_Labels.xml
 index 068c4c5..45d613b 100644
 --- a/vendor/arctic-fuse-3/1080i/Includes_Labels.xml
 +++ b/sources/arctic-fuse-3/1080i/Includes_Labels.xml
 @@ -1193,11 +1193,13 @@
      </variable>
- 
+
      <variable name="Label_Overlay_1114_PlotBox">
 +        <value condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">$INFO[Window(Home).Property(emby_person_textbox)]</value>
          <value condition="Container(7000).IsUpdating | String.IsEmpty(Window.Property(tmdb_type)) | String.IsEmpty(Window.Property(tmdb_id)) | Integer.IsEqual(Container(7000).NumItems,0)">$INFO[Window.Property(textbox)]</value>
          <value>$VAR[Label_PlotBox_C7000]</value>
      </variable>
- 
+
      <variable name="Label_Overlay_Header_1114_PlotBox">
 +        <value condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">$INFO[Window(Home).Property(emby_person_header)]</value>
          <value condition="!String.IsEmpty(Window.Property(Header))">$INFO[Window.Property(Header)]</value>
@@ -647,12 +647,12 @@ index 25f6120..6bf0f28 100644
                      <control type="group">
                          <left>$PARAM[offset_x]</left>
 diff --git a/vendor/arctic-fuse-3/1080i/Includes_Paths.xml b/sources/arctic-fuse-3/1080i/Includes_Paths.xml
-index 55e55d3..5aac662 100644
+index 55e55d3..857bbf5 100644
 --- a/vendor/arctic-fuse-3/1080i/Includes_Paths.xml
 +++ b/sources/arctic-fuse-3/1080i/Includes_Paths.xml
 @@ -93,6 +93,10 @@
      </variable>
- 
+
      <variable name="Path_VideoInfo_OnlineSeasons">
 +        <!-- Emby Next Gen dynamic Series items already carry the complete
 +             query=Season folder path.  Let Fuse render that path directly
@@ -661,10 +661,10 @@ index 55e55d3..5aac662 100644
          <value condition="String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_ID))">special://skin/extras/playlists/Null.xsp</value>
          <value condition="String.IsEmpty(Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_Type))">special://skin/extras/playlists/Null.xsp</value>
          <value condition="String.IsEqual(Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_Type),tv)">plugin://plugin.video.themoviedb.helper/?info=seasons&amp;nextpage=false&amp;cacheonly=true&amp;tmdb_type=tv&amp;tmdb_id=$INFO[Window(Home).Property(TMDbHelper.ListItem.Monitor.TMDb_ID)]</value>
-@@ -304,6 +308,26 @@
+@@ -304,6 +308,16 @@
          <value>special://skin/extras/playlists/Null.xsp</value>
      </variable>
- 
+
 +    <variable name="Path_VideoInfo_EmbyCast">
 +        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)] + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=DETAIL_CAST&amp;id=,]</value>
 +        <value>special://skin/extras/playlists/Null.xsp</value>
@@ -672,16 +672,6 @@ index 55e55d3..5aac662 100644
 +
 +    <variable name="Path_VideoInfo_EmbySimilar">
 +        <value condition="!String.IsEmpty(ListItem.Property(emby_details)) + [String.IsEqual(ListItem.Property(ItemType),Movie) | String.IsEqual(ListItem.Property(ItemType),Series)] + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=DETAIL_SIMILAR&amp;id=,]</value>
-+        <value>special://skin/extras/playlists/Null.xsp</value>
-+    </variable>
-+
-+    <variable name="Path_VideoInfo_EmbyPersonMovies">
-+        <value condition="String.IsEqual(ListItem.Property(person_source),emby) + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=&amp;media_type=movies]</value>
-+        <value>special://skin/extras/playlists/Null.xsp</value>
-+    </variable>
-+
-+    <variable name="Path_VideoInfo_EmbyPersonTV">
-+        <value condition="String.IsEqual(ListItem.Property(person_source),emby) + !String.IsEmpty(ListItem.Property(id))">$INFO[ListItem.Property(id),plugin://plugin.video.embycon/?mode=NEW_SEARCH_PERSON&amp;person_id=&amp;media_type=tvshows]</value>
 +        <value>special://skin/extras/playlists/Null.xsp</value>
 +    </variable>
 +
@@ -705,11 +695,11 @@ index 7367dc8..8880e03 100644
 +            <content>plugin://script.skinvariables/?info=get_encoded_string&amp;infolabel=Container(310).ListItem.Label&amp;&amp;$INFO[Container(310).ListItem.Label]</content>
          </include>
      </include>
- 
+
 @@ -544,4 +544,4 @@
      </include>
- 
- 
+
+
 -</includes>
 \ No newline at end of file
 +</includes>
