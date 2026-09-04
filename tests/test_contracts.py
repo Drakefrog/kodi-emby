@@ -37,6 +37,9 @@ class RepositoryContracts(unittest.TestCase):
   conditions=[next(v.attrib['condition'] for v in variable if v.attrib.get('condition')) for variable in root.findall('variable') if variable.attrib['name'] in names]
   expected='String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))'
   self.assertEqual(conditions,[expected,expected])
+  images=ET.parse(ROOT/'sources/arctic-fuse-3/1080i/Includes_Images.xml').getroot()
+  poster=next(v for v in images.findall('variable') if v.attrib['name']=='Image_1114_Poster')
+  self.assertEqual(next(v.attrib['condition'] for v in poster if v.attrib.get('condition') and 'emby_person_poster' in (v.text or '')),expected)
  def test_helper_provenance_and_service_dependency_closure(self):
   helper=json.loads((ROOT/'helpers.json').read_text())['plugin.video.emby-next-gen']; self.assertEqual(len(helper['sha256']),64); self.assertTrue(helper['source_url'].startswith('https://'))
   helper_xml=ET.parse(ROOT/'sources/plugin.video.emby-next-gen/addon.xml').getroot(); service_req=next(x.attrib['version'] for x in helper_xml.find('requires') if x.attrib['addon']=='plugin.service.emby-next-gen')
