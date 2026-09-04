@@ -40,6 +40,13 @@ class RepositoryContracts(unittest.TestCase):
   images=ET.parse(ROOT/'sources/arctic-fuse-3/1080i/Includes_Images.xml').getroot()
   poster=next(v for v in images.findall('variable') if v.attrib['name']=='Image_1114_Poster')
   self.assertEqual(next(v.attrib['condition'] for v in poster if v.attrib.get('condition') and 'emby_person_poster' in (v.text or '')),expected)
+ def test_emby_person_opens_standard_info_dialog(self):
+  routes=(ROOT/'sources/embycon/plugin.video.embycon/resources/lib/detail_routes.py').read_text(); functions=(ROOT/'sources/embycon/plugin.video.embycon/resources/lib/functions.py').read_text(); plot=(ROOT/'sources/arctic-fuse-3/1080i/Dialog_DialogPlot.xml').read_text(); info=(ROOT/'sources/arctic-fuse-3/1080i/Includes_DialogInfo.xml').read_text()
+  for value in ('setMediaType("video")','"tmdb_type": "person"','"person_source": "emby"','"birthday": fields["birthday"][:10]','"gender": fields["gender"]','xbmcgui.Dialog().info(list_item)'): self.assertIn(value,routes)
+  for mode in ('SHOW_PERSON','OPEN_PERSON'): self.assertIn(mode,functions)
+  self.assertIn('mode=OPEN_PERSON&amp;person_id=$INFO[Window.Property(emby_person_id)]',plot)
+  self.assertIn('mode=NEW_SEARCH_PERSON&amp;person_id=,&amp;media_type=crew',info)
+  self.assertIn('info=crew_in_both&amp;tmdb_type=person',info)
  def test_helper_provenance_and_service_dependency_closure(self):
   helper=json.loads((ROOT/'helpers.json').read_text())['plugin.video.emby-next-gen']; self.assertEqual(len(helper['sha256']),64); self.assertTrue(helper['source_url'].startswith('https://'))
   helper_xml=ET.parse(ROOT/'sources/plugin.video.emby-next-gen/addon.xml').getroot(); service_req=next(x.attrib['version'] for x in helper_xml.find('requires') if x.attrib['addon']=='plugin.service.emby-next-gen')

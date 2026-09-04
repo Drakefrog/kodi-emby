@@ -1,3 +1,13 @@
+diff --git a/sources/embycon/.gitignore b/sources/embycon/.gitignore
+new file mode 100644
+index 0000000..0fff304
+--- /dev/null
++++ b/sources/embycon/.gitignore
+@@ -0,0 +1,4 @@
++__pycache__/
++*.py[cod]
++*$py.class
++.DS_Store
 diff --git a/vendor/embycon/plugin.video.embycon/resources/lib/clientinfo.py b/sources/embycon/plugin.video.embycon/resources/lib/clientinfo.py
 index 5126f65..203c41d 100644
 --- a/vendor/embycon/plugin.video.embycon/resources/lib/clientinfo.py
@@ -87,10 +97,10 @@ index 5126f65..203c41d 100644
 +        )
 diff --git a/sources/embycon/plugin.video.embycon/resources/lib/detail_routes.py b/sources/embycon/plugin.video.embycon/resources/lib/detail_routes.py
 new file mode 100644
-index 0000000..8a39cad
+index 0000000..ff863e0
 --- /dev/null
 +++ b/sources/embycon/plugin.video.embycon/resources/lib/detail_routes.py
-@@ -0,0 +1,501 @@
+@@ -0,0 +1,576 @@
 +"""Emby-backed content routes used by Arctic Fuse's Info dialog."""
 +
 +from __future__ import annotations
@@ -338,6 +348,81 @@ index 0000000..8a39cad
 +        window.clearProperty("emby_person_pending")
 +    xbmcplugin.endOfDirectory(handle, cacheToDisc=False)
 +    return 0
++
++
++def show_person(params: dict[str, str]) -> None:
++    """Open an Emby person in Kodi's standard information dialog."""
++
++    person_id = params.get("id", "")
++    if not is_valid_detail_item_id(person_id):
++        log.debug("Ignoring invalid direct person route: {0}", person_id)
++        return
++
++    person = _fetch_person_payload(person_id)
++    if person is None:
++        log.debug("Unable to open direct person route: {0}", person_id)
++        return
++
++    fields = emby_person_fields(person)
++    list_item = xbmcgui.ListItem(
++        label=fields["header"],
++        path=(
++            EMBYCON_PLUGIN_URL
++            + "?mode=NEW_SEARCH_PERSON&person_id="
++            + urllib.parse.quote(person_id, safe="")
++        ),
++        offscreen=True,
++    )
++    info_tag = list_item.getVideoInfoTag()
++    # Kodi only opens the video information dialog for a video media type;
++    # tmdb_type selects Fuse's person-specific layout inside that dialog.
++    info_tag.setMediaType("video")
++    info_tag.setTitle(fields["header"])
++    info_tag.setPlot(fields["textbox"])
++    list_item.setProperties({
++        "id": person_id,
++        "dbtype": "person",
++        "tmdb_type": "person",
++        "person_source": "emby",
++        "emby_person_id": person_id,
++        "biography": fields["textbox"],
++        "birthday": fields["birthday"][:10],
++        "deathday": fields["deathday"][:10],
++        "gender": fields["gender"],
++        "born": fields["place_of_birth"],
++    })
++    tag = fields.get("primary_image_tag")
++    server = DownloadUtils().get_server()
++    if tag and server:
++        image = DownloadUtils().image_url(
++            person_id, "Primary", 0, 400, 400, tag, server=server
++        )
++        list_item.setArt({"thumb": image, "poster": image})
++
++    log.debug("Opening direct Emby person dialog: {0}", person_id)
++    xbmcgui.Dialog().info(list_item)
++
++
++def open_person(params: dict[str, str]) -> None:
++    """Open a selected Emby person from Fuse's second-stage Info action."""
++
++    person_id = params.get("person_id", "")
++    if not is_valid_detail_item_id(person_id):
++        log.debug("Ignoring invalid person handoff: {0}", person_id)
++        return
++
++    detail_url = (
++        EMBYCON_PLUGIN_URL
++        + "?mode=SHOW_PERSON&id="
++        + urllib.parse.quote(person_id, safe="")
++    )
++    xbmc.executebuiltin("Dialog.Close(1114,true)")
++    xbmc.executebuiltin("Dialog.Close(1190,true)")
++    xbmc.executebuiltin("Dialog.Close(movieinformation,true)")
++    xbmc.executebuiltin(
++        "AlarmClock(embycon_show_person,RunPlugin(%s),00:01,silent)"
++        % detail_url
++    )
 +
 +
 +def _normalise_similar_item(item: dict) -> dict:
@@ -1040,10 +1125,10 @@ index 0bfa173..43c3fc1 100644
              if suppress is False:
                  xbmcgui.Dialog().notification(
 diff --git a/vendor/embycon/plugin.video.embycon/resources/lib/functions.py b/sources/embycon/plugin.video.embycon/resources/lib/functions.py
-index e33dba2..43d8b74 100644
+index e33dba2..124b0fb 100644
 --- a/vendor/embycon/plugin.video.embycon/resources/lib/functions.py
 +++ b/sources/embycon/plugin.video.embycon/resources/lib/functions.py
-@@ -47,6 +47,19 @@ from .skin_cloner import clone_default_skin
+@@ -47,6 +47,21 @@ from .skin_cloner import clone_default_skin
  from .item_functions import extract_media_info
  from .custom_nodes import load_custom_nodes
  from .profile_utils import list_available_profiles, view_profile_details
@@ -1054,16 +1139,18 @@ index e33dba2..43d8b74 100644
 +)
 +from .detail_routes import (
 +    open_detail,
++    open_person,
 +    render_detail_cast,
 +    render_detail_item,
 +    render_detail_person,
 +    render_detail_similar,
 +    show_detail,
++    show_person,
 +)
  
  
  log = SimpleLogging(__name__)
-@@ -56,7 +69,15 @@ log = SimpleLogging(__name__)
+@@ -56,7 +71,15 @@ log = SimpleLogging(__name__)
  def main_entry_point() -> None:
      log.debug("===== EmbyCon START =====")
  
@@ -1080,7 +1167,7 @@ index e33dba2..43d8b74 100644
      mode = params.get("mode", None)
  
      settings = xbmcaddon.Addon()
-@@ -141,6 +162,18 @@ def main_entry_point() -> None:
+@@ -141,6 +164,22 @@ def main_entry_point() -> None:
          item_count = get_widget_content(int(sys.argv[1]), params)
      elif mode == "WIDGET_CONTENT_CAST":
          get_widget_content_cast(int(sys.argv[1]), params)
@@ -1096,10 +1183,14 @@ index e33dba2..43d8b74 100644
 +        show_detail(params)
 +    elif mode == "OPEN_DETAIL":
 +        open_detail(params)
++    elif mode == "SHOW_PERSON":
++        show_person(params)
++    elif mode == "OPEN_PERSON":
++        open_person(params)
      elif mode == "SHOW_CONTENT":
          check_server()
          item_count = show_content(params)
-@@ -149,6 +182,8 @@ def main_entry_point() -> None:
+@@ -149,6 +188,8 @@ def main_entry_point() -> None:
          show_search()
      elif mode == "NEW_SEARCH":
          search_results(params)
@@ -1108,7 +1199,7 @@ index e33dba2..43d8b74 100644
      elif mode == "NEW_SEARCH_PERSON":
          search_results_person(params)
      elif mode == "SHOW_SERVER_SESSIONS":
-@@ -776,12 +811,34 @@ def search_results_person(params: dict[str, str]) -> None:
+@@ -776,12 +817,34 @@ def search_results_person(params: dict[str, str]) -> None:
      person_id = params.get("person_id")
      if person_id is None:
          raise ValueError("person_id parameter is required")
@@ -1144,7 +1235,7 @@ index e33dba2..43d8b74 100644
              "&Recursive=true",
              "&Fields={field_filters}",
              "&format=json",
-@@ -985,20 +1042,79 @@ def search_results(params: dict[str, str]) -> None:
+@@ -985,20 +1048,79 @@ def search_results(params: dict[str, str]) -> None:
                  "&ImageTypeLimit=1",
              ]
          )

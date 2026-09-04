@@ -54,11 +54,13 @@ from .search_utils import (
 )
 from .detail_routes import (
     open_detail,
+    open_person,
     render_detail_cast,
     render_detail_item,
     render_detail_person,
     render_detail_similar,
     show_detail,
+    show_person,
 )
 
 
@@ -174,6 +176,10 @@ def main_entry_point() -> None:
         show_detail(params)
     elif mode == "OPEN_DETAIL":
         open_detail(params)
+    elif mode == "SHOW_PERSON":
+        show_person(params)
+    elif mode == "OPEN_PERSON":
+        open_person(params)
     elif mode == "SHOW_CONTENT":
         check_server()
         item_count = show_content(params)

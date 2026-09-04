@@ -247,6 +247,81 @@ def render_detail_person(handle: int, params: dict[str, str]) -> int:
     return 0
 
 
+def show_person(params: dict[str, str]) -> None:
+    """Open an Emby person in Kodi's standard information dialog."""
+
+    person_id = params.get("id", "")
+    if not is_valid_detail_item_id(person_id):
+        log.debug("Ignoring invalid direct person route: {0}", person_id)
+        return
+
+    person = _fetch_person_payload(person_id)
+    if person is None:
+        log.debug("Unable to open direct person route: {0}", person_id)
+        return
+
+    fields = emby_person_fields(person)
+    list_item = xbmcgui.ListItem(
+        label=fields["header"],
+        path=(
+            EMBYCON_PLUGIN_URL
+            + "?mode=NEW_SEARCH_PERSON&person_id="
+            + urllib.parse.quote(person_id, safe="")
+        ),
+        offscreen=True,
+    )
+    info_tag = list_item.getVideoInfoTag()
+    # Kodi only opens the video information dialog for a video media type;
+    # tmdb_type selects Fuse's person-specific layout inside that dialog.
+    info_tag.setMediaType("video")
+    info_tag.setTitle(fields["header"])
+    info_tag.setPlot(fields["textbox"])
+    list_item.setProperties({
+        "id": person_id,
+        "dbtype": "person",
+        "tmdb_type": "person",
+        "person_source": "emby",
+        "emby_person_id": person_id,
+        "biography": fields["textbox"],
+        "birthday": fields["birthday"][:10],
+        "deathday": fields["deathday"][:10],
+        "gender": fields["gender"],
+        "born": fields["place_of_birth"],
+    })
+    tag = fields.get("primary_image_tag")
+    server = DownloadUtils().get_server()
+    if tag and server:
+        image = DownloadUtils().image_url(
+            person_id, "Primary", 0, 400, 400, tag, server=server
+        )
+        list_item.setArt({"thumb": image, "poster": image})
+
+    log.debug("Opening direct Emby person dialog: {0}", person_id)
+    xbmcgui.Dialog().info(list_item)
+
+
+def open_person(params: dict[str, str]) -> None:
+    """Open a selected Emby person from Fuse's second-stage Info action."""
+
+    person_id = params.get("person_id", "")
+    if not is_valid_detail_item_id(person_id):
+        log.debug("Ignoring invalid person handoff: {0}", person_id)
+        return
+
+    detail_url = (
+        EMBYCON_PLUGIN_URL
+        + "?mode=SHOW_PERSON&id="
+        + urllib.parse.quote(person_id, safe="")
+    )
+    xbmc.executebuiltin("Dialog.Close(1114,true)")
+    xbmc.executebuiltin("Dialog.Close(1190,true)")
+    xbmc.executebuiltin("Dialog.Close(movieinformation,true)")
+    xbmc.executebuiltin(
+        "AlarmClock(embycon_show_person,RunPlugin(%s),00:01,silent)"
+        % detail_url
+    )
+
+
 def _normalise_similar_item(item: dict) -> dict:
     """Fill fields expected by the existing EmbyCon item mapper."""
 

@@ -201,6 +201,9 @@
             <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_item_id))">RunPlugin(plugin://plugin.video.embycon/?mode=OPEN_DETAIL&amp;item_id=$INFO[Window.Property(emby_item_id)]&amp;item_type=$INFO[Window.Property(emby_item_type)])</onclick>
             <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_item_id))">Dialog.Close(1114,true)</onclick>
             <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_item_id))">Dialog.Close(movieinformation,true)</onclick>
+            <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">RunPlugin(plugin://plugin.video.embycon/?mode=OPEN_PERSON&amp;person_id=$INFO[Window.Property(emby_person_id)])</onclick>
+            <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">Dialog.Close(1114,true)</onclick>
+            <onclick condition="String.IsEqual(Window.Property(emby_source),emby) + !String.IsEmpty(Window.Property(emby_person_id))">Dialog.Close(movieinformation,true)</onclick>
             <onclick condition="!String.IsEqual(Window.Property(emby_source),emby)">RunScript(plugin.video.themoviedb.helper,add_path=$INFO[Window.Property(path)],call_auto=1190,origin_tmdb_type=$INFO[Window.Property(origin_tmdb_type)],origin_tmdb_id=$INFO[Window.Property(origin_tmdb_id)],origin_season=$INFO[Window.Property(origin_season)],origin_episode=$INFO[Window.Property(origin_episode)],return)</onclick>
             <onclick condition="!String.IsEqual(Window.Property(emby_source),emby)">Dialog.Close(1114,true)</onclick>
             <onclick>Dialog.Close(videoosd,true)</onclick>
